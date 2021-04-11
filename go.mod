@@ -1,4 +1,4 @@
-module bend-it-playground
+module github.com/walpod/bend-it-playground
 
 go 1.16
 
