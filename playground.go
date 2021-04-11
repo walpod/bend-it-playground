@@ -39,7 +39,7 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 
 func (pg *Playground) buildSpline() {
 	vertsx, vertsy := []float64{10, 100, 150}, []float64{10, 100, 10}
-	entryTansx, entryTansy, exitTansx, exitTansy := cubic.NaturalTanf2d{}.Find(vertsx, vertsx, nil)
+	entryTansx, entryTansy, exitTansx, exitTansy := cubic.NaturalTanf2d{}.Find(vertsx, vertsy, nil)
 	pg.spline = cubic.BuildHermiteSpline2d(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, nil)
 	pg.tu = float64(len(vertsx) - 1)
 }
