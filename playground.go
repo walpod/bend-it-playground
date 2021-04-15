@@ -11,7 +11,7 @@ import (
 type Playground struct {
 	//window *widgets.QMainWindow
 	//canvas *widgets.QWidget
-	spline bendit.Spline2d
+	spline bendit.SplineFn2d
 	tu     float64
 }
 
