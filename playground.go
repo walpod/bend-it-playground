@@ -58,9 +58,9 @@ func (pg *Playground) buildSpline() {
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
-	fr, to := pg.spline.Domain()
-	stepSize := to / 100
-	for t := fr; t < to; t += stepSize {
+	dom := pg.spline.Domain()
+	stepSize := dom.To / 100
+	for t := dom.From; t < dom.To; t += stepSize {
 		x, y := pg.spline.At(t)
 		qp.DrawPoint3(int(math.Round(x)), int(math.Round(y)))
 	}
