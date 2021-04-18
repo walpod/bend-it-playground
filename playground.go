@@ -11,8 +11,7 @@ import (
 type Playground struct {
 	//window *widgets.QMainWindow
 	//canvas *widgets.QWidget
-	spline bendit.Fn2d
-	tu     float64
+	spline bendit.Spline2d
 }
 
 func (pg *Playground) build(window *widgets.QMainWindow) {
@@ -45,19 +44,28 @@ func (pg *Playground) buildSpline() {
 		pg.tu = float64(len(vertsx) - 1)
 	*/
 
-	//pg.spline = cubic.NewBezierSpline2d([]float64{200, 400}, []float64{200, 400}, []float64{210, 390}, []float64{200, 400}, nil).Fn()
-	pg.spline = cubic.NewBezierSpline2d(
-		[]float64{100, 300, 500}, []float64{100, 300, 100},
-		[]float64{120, 250, 350, 480}, []float64{150, 300, 300, 150}, nil).Fn()
-	pg.tu = 2
+	// canonical
+	cubics := []cubic.Cubic2d{cubic.NewCubic2d(
+		cubic.NewCubicPoly(100, 80, 40, 8),
+		cubic.NewCubicPoly(210, 120, 0, 9),
+	)}
+	pg.spline = cubic.NewCanonicalSpline2d(cubics, nil)
 
+	// bezier
+	/*
+		pg.spline = cubic.NewBezierSpline2d([]float64{200, 400}, []float64{200, 400}, []float64{210, 390}, []float64{200, 400}, nil)
+		pg.spline = cubic.NewBezierSpline2d(
+			[]float64{100, 300, 500}, []float64{100, 300, 100},
+			[]float64{120, 230, 370, 490}, []float64{150, 300, 300, 150}, nil)
+	*/
 }
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
-	stepSize := pg.tu / 100
-	for t := 0.; t < pg.tu; t += stepSize {
-		x, y := pg.spline(t)
+	fr, to := pg.spline.Domain()
+	stepSize := to / 100
+	for t := fr; t < to; t += stepSize {
+		x, y := pg.spline.At(t)
 		qp.DrawPoint3(int(math.Round(x)), int(math.Round(y)))
 	}
 	qp.DestroyQPainter()
