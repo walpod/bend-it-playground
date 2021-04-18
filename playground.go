@@ -38,15 +38,25 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 }
 
 func (pg *Playground) buildSpline() {
-	vertsx, vertsy := []float64{10, 100, 150}, []float64{10, 100, 10}
-	entryTansx, entryTansy, exitTansx, exitTansy := cubic.NaturalTanf2d{}.Find(vertsx, vertsy, nil)
-	pg.spline = cubic.BuildHermiteSpline2d(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, nil)
-	pg.tu = float64(len(vertsx) - 1)
+	/*
+		vertsx, vertsy := []float64{10, 100, 150}, []float64{10, 100, 10}
+		entryTansx, entryTansy, exitTansx, exitTansy := cubic.NaturalTanf2d{}.Find(vertsx, vertsy, nil)
+		pg.spline = cubic.BuildHermiteSpline2d(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, nil)
+		pg.tu = float64(len(vertsx) - 1)
+	*/
+
+	//pg.spline = cubic.NewBezierSpline2d([]float64{200, 400}, []float64{200, 400}, []float64{210, 390}, []float64{200, 400}, nil).Fn()
+	pg.spline = cubic.NewBezierSpline2d(
+		[]float64{100, 300, 500}, []float64{100, 300, 100},
+		[]float64{120, 250, 350, 480}, []float64{150, 300, 300, 150}, nil).Fn()
+	pg.tu = 2
+
 }
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
-	for t := 0.; t < pg.tu; t += pg.tu / 100 {
+	stepSize := pg.tu / 100
+	for t := 0.; t < pg.tu; t += stepSize {
 		x, y := pg.spline(t)
 		qp.DrawPoint3(int(math.Round(x)), int(math.Round(y)))
 	}
