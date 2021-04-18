@@ -37,26 +37,22 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 }
 
 func (pg *Playground) buildSpline() {
-	/*
-		vertsx, vertsy := []float64{10, 100, 150}, []float64{10, 100, 10}
-		entryTansx, entryTansy, exitTansx, exitTansy := cubic.NaturalTanf2d{}.Find(vertsx, vertsy, nil)
-		pg.spline = cubic.BuildHermiteSpline2d(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, nil)
-		pg.tu = float64(len(vertsx) - 1)
-	*/
+	// hermite
+	pg.spline = cubic.NewHermiteSplineTanFinder2d([]float64{10, 100, 150}, []float64{10, 100, 10}, cubic.NaturalTanf2d{}, nil)
 
 	// canonical
-	cubics := []cubic.Cubic2d{cubic.NewCubic2d(
+	/*cubics := []cubic.Cubic2d{cubic.NewCubic2d(
 		cubic.NewCubicPoly(100, 80, 40, 8),
 		cubic.NewCubicPoly(210, 120, 0, 9),
 	)}
 	pg.spline = cubic.NewCanonicalSpline2d(cubics, nil)
+	*/
 
 	// bezier
-	/*
-		pg.spline = cubic.NewBezierSpline2d([]float64{200, 400}, []float64{200, 400}, []float64{210, 390}, []float64{200, 400}, nil)
-		pg.spline = cubic.NewBezierSpline2d(
-			[]float64{100, 300, 500}, []float64{100, 300, 100},
-			[]float64{120, 230, 370, 490}, []float64{150, 300, 300, 150}, nil)
+	/*pg.spline = cubic.NewBezierSpline2d([]float64{200, 400}, []float64{200, 400}, []float64{210, 390}, []float64{200, 400}, nil)
+	pg.spline = cubic.NewBezierSpline2d(
+		[]float64{100, 300, 500}, []float64{100, 300, 100},
+		[]float64{120, 230, 370, 490}, []float64{150, 300, 300, 150}, nil)
 	*/
 }
 
