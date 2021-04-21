@@ -64,7 +64,7 @@ func (pg *Playground) paint(canvas *widgets.QWidget) {
 }
 
 func (pg *Playground) drawByIteration(qp *gui.QPainter) {
-	dom := pg.spline.Domain()
+	dom := pg.spline.Knots().Domain(pg.spline.SegmentCnt())
 	stepSize := dom.To / 100
 	for t := dom.From; t < dom.To; t += stepSize {
 		x, y := pg.spline.At(t)
