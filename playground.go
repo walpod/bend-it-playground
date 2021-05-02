@@ -13,8 +13,8 @@ import (
 type Playground struct {
 	//window *widgets.QMainWindow
 	//canvas *widgets.QWidget
-	spline *cubic.BezierSpline2d // TODO for a short time, then change back to bendit.Spline2d
-	//spline bendit.Spline2d
+	//spline *cubic.BezierSpline2d // TODO for a short time, then change back to bendit.Spline2d
+	spline bendit.Spline2d
 }
 
 func (pg *Playground) build(window *widgets.QMainWindow) {
@@ -41,14 +41,14 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 
 func (pg *Playground) buildSpline() {
 	// hermite
-	//pg.spline = cubic.NewHermiteSplineTanFinder2d([]float64{10, 100, 150}, []float64{10, 100, 10}, cubic.NaturalTanf2d{}, cubic.NewUniformKnots())
+	pg.spline = cubic.NewHermiteSplineTanFinder2d([]float64{10, 100, 150}, []float64{10, 100, 10}, cubic.NaturalTanf2d{}, bendit.NewUniformKnots())
 
 	// canonical
-	/*cubics := []cubic.Cubic2d{cubic.NewCubic2d(
+	cubics := []cubic.Cubic2d{cubic.NewCubic2d(
 		cubic.NewCubicPoly(100, 80, 40, 8),
 		cubic.NewCubicPoly(210, 120, 0, 9),
 	)}
-	pg.spline = cubic.NewCanonicalSpline2d(cubics, cubic.NewUniformKnots())*/
+	pg.spline = cubic.NewCanonicalSpline2d(cubics, bendit.NewUniformKnots())
 
 	// bezier
 	pg.spline = cubic.NewBezierSpline2d([]float64{200, 400}, []float64{200, 400}, []float64{210, 390}, []float64{200, 400}, bendit.NewUniformKnots())
