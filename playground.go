@@ -85,24 +85,26 @@ func (pg *Playground) drawBySubdivisionDirect(qp *gui.QPainter) {
 	pg.spline.Approximate(cubic.NewFlatWingsChecker2d(0.2), collector)
 }
 
-type QPathCollector2d struct{}
-
-func (lc QPathCollector2d) InitCollection() interface{} {
-	return gui.NewQPainterPath()
+type QPathCollector2d struct {
+	Path *gui.QPainterPath
 }
 
-func (lc QPathCollector2d) CollectLine(x0, y0, x3, y3 float64, collection interface{}) {
-	qpath := collection.(*gui.QPainterPath)
-	if qpath.Length() == 0 {
-		qpath.MoveTo(core.NewQPointF3(x0, y0))
+func NewQPathCollector2d() *QPathCollector2d {
+	return &QPathCollector2d{Path: gui.NewQPainterPath()}
+}
+
+func (lc QPathCollector2d) CollectLine(x0, y0, x3, y3 float64) {
+	if lc.Path.ElementCount() == 0 {
+		lc.Path.MoveTo(core.NewQPointF3(x0, y0))
 	}
-	qpath.LineTo(core.NewQPointF3(x3, y3))
+	lc.Path.LineTo(core.NewQPointF3(x3, y3))
 }
 
 func (pg *Playground) drawBySubdivisionPath(qp *gui.QPainter) {
-	qpath := pg.spline.Approximate(cubic.NewFlatWingsChecker2d(0.7), QPathCollector2d{}).(*gui.QPainterPath)
-	fmt.Printf("#line-segments: %v \n", qpath.ElementCount())
-	qp.StrokePath(qpath, gui.NewQPen())
+	paco := NewQPathCollector2d()
+	pg.spline.Approximate(cubic.NewFlatWingsChecker2d(0.7), paco)
+	fmt.Printf("#line-segments: %v \n", paco.Path.ElementCount())
+	qp.StrokePath(paco.Path, gui.NewQPen())
 }
 
 func (pg *Playground) drawTest(qp *gui.QPainter) {
