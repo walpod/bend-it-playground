@@ -82,7 +82,7 @@ func (pg *Playground) drawBySubdivisionDirect(qp *gui.QPainter) {
 		lineSegNo++
 		qp.DrawLine3(int(math.Round(x0)), int(math.Round(y0)), int(math.Round(x1)), int(math.Round(y1)))
 	})
-	pg.spline.Approximate(cubic.NewFlatWingsChecker2d(0.2), collector)
+	pg.spline.Approximate(0.2, collector)
 }
 
 type QPathCollector2d struct {
@@ -102,7 +102,7 @@ func (lc QPathCollector2d) CollectLine(x0, y0, x3, y3 float64) {
 
 func (pg *Playground) drawBySubdivisionPath(qp *gui.QPainter) {
 	paco := NewQPathCollector2d()
-	pg.spline.Approximate(cubic.NewFlatWingsChecker2d(0.7), paco)
+	pg.spline.Approximate(0.7, paco)
 	fmt.Printf("#line-segments: %v \n", paco.Path.ElementCount())
 	qp.StrokePath(paco.Path, gui.NewQPen())
 }
