@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/gui"
 	"github.com/therecipe/qt/widgets"
 	"github.com/walpod/bend-it"
@@ -12,7 +13,7 @@ import (
 type Playground struct {
 	//window *widgets.QMainWindow
 	//canvas *widgets.QWidget
-	spline *cubic.BezierSpline2d // TODO for a short time, change to bendit.Spline2d
+	spline *cubic.BezierSpline2d // TODO for a short time, then change back to bendit.Spline2d
 	//spline bendit.Spline2d
 }
 
@@ -59,7 +60,9 @@ func (pg *Playground) buildSpline() {
 func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
 	//pg.drawByIteration(qp)
-	pg.drawBySubdivision(qp)
+	//pg.drawBySubdivisionDirect(qp)
+	pg.drawBySubdivisionPath(qp)
+	//pg.drawTest(qp)
 	qp.DestroyQPainter()
 }
 
@@ -72,11 +75,60 @@ func (pg *Playground) drawByIteration(qp *gui.QPainter) {
 	}
 }
 
-func (pg *Playground) drawBySubdivision(qp *gui.QPainter) {
+func (pg *Playground) drawBySubdivisionDirect(qp *gui.QPainter) {
 	lineSegNo := 0
-	pg.spline.Approximate(nil, func(x0, y0, x1, y1 float64) {
+	collector := cubic.NewDirectCollector2d(func(x0, y0, x1, y1 float64) {
 		fmt.Printf("%v-th line(%v, %v, %v, %v)\n", lineSegNo, x0, y0, x1, y1)
 		lineSegNo++
 		qp.DrawLine3(int(math.Round(x0)), int(math.Round(y0)), int(math.Round(x1)), int(math.Round(y1)))
 	})
+	pg.spline.Approximate(cubic.NewFlatWingsChecker2d(0.2), collector)
+}
+
+type QPathCollector2d struct{}
+
+func (lc QPathCollector2d) InitCollection() interface{} {
+	return gui.NewQPainterPath()
+}
+
+func (lc QPathCollector2d) CollectLine(x0, y0, x3, y3 float64, collection interface{}) {
+	qpath := collection.(*gui.QPainterPath)
+	if qpath.Length() == 0 {
+		qpath.MoveTo(core.NewQPointF3(x0, y0))
+	}
+	qpath.LineTo(core.NewQPointF3(x3, y3))
+}
+
+func (pg *Playground) drawBySubdivisionPath(qp *gui.QPainter) {
+	qpath := pg.spline.Approximate(cubic.NewFlatWingsChecker2d(0.7), QPathCollector2d{}).(*gui.QPainterPath)
+	fmt.Printf("#line-segments: %v \n", qpath.ElementCount())
+	qp.StrokePath(qpath, gui.NewQPen())
+}
+
+func (pg *Playground) drawTest(qp *gui.QPainter) {
+	pointsf := []*core.QPointF{
+		core.NewQPointF3(250, 287),
+		core.NewQPointF3(254, 289),
+		core.NewQPointF3(259, 291),
+		core.NewQPointF3(263, 293),
+		core.NewQPointF3(500, 100),
+	}
+	points := [2]*core.QPoint{
+		core.NewQPoint2(250, 287),
+		core.NewQPoint2(500, 100),
+	}
+	_, _ = pointsf, points
+
+	//qp.DrawPolyline(points[0], len(points))
+	//qp.DrawPolyline(core.NewQPointF3(500, 200), 3)
+	//qp.DrawPolygon3(points[0], len(points), core.Qt__OddEvenFill)
+	//qp.DrawPoints(pointsf[0], len(points))
+
+	path := gui.NewQPainterPath()
+	path.MoveTo(core.NewQPointF3(100, 100))
+	path.LineTo(core.NewQPointF3(250, 287))
+	path.LineTo(core.NewQPointF3(259, 291))
+	path.LineTo(core.NewQPointF3(263, 293))
+	path.LineTo(core.NewQPointF3(500, 100))
+	qp.StrokePath(path, gui.NewQPen())
 }
