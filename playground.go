@@ -51,15 +51,13 @@ func (pg *Playground) buildSpline() {
 	pg.spline = cubic.NewCanonicalSpline2d(cubics, bendit.NewUniformKnots())
 
 	// bezier
-	pg.spline = cubic.NewBezierSpline2d([]float64{200, 400}, []float64{200, 400},
-		//[]float64{210, 390}, []float64{200, 400},
-		[]float64{0, 390}, []float64{0, 400}, []float64{210, 0}, []float64{200, 0},
-		bendit.NewUniformKnots())
-	pg.spline = cubic.NewBezierSpline2d(
-		[]float64{100, 300, 500}, []float64{100, 300, 100},
-		//[]float64{120, 200, 400, 490}, []float64{150, 300, 300, 150},
-		[]float64{0, 200, 490}, []float64{0, 300, 150}, []float64{120, 400, 0}, []float64{150, 300, 0},
-		bendit.NewUniformKnots())
+	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
+	cubic.NewBezierVertex2d(200, 200, 0, 0, 210, 200),
+	cubic.NewBezierVertex2d(400, 400, 390, 400, 0, 0))*/
+	pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
+		cubic.NewBezierVertex2d(100, 100, 0, 0, 120, 150),
+		cubic.NewBezierVertex2d(300, 300, 200, 300, 400, 300),
+		cubic.NewBezierVertex2d(500, 100, 490, 150, 0, 0))
 }
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
