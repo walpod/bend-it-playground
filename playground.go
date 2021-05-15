@@ -52,12 +52,18 @@ func (pg *Playground) buildSpline() {
 
 	// bezier
 	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
-	cubic.NewBezierVertex2d(200, 200, 0, 0, 210, 200),
-	cubic.NewBezierVertex2d(400, 400, 390, 400, 0, 0))*/
-	pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
-		cubic.NewBezierVertex2d(100, 100, 0, 0, 120, 150),
-		cubic.NewBezierVertex2d(300, 300, 200, 300, 400, 300),
-		cubic.NewBezierVertex2d(500, 100, 490, 150, 0, 0))
+		cubic.NewBezierVertex2d(200, 200, 0, 0, 210, 200),
+		cubic.NewBezierVertex2d(400, 400, 390, 400, 0, 0))
+	pg.spline = cubic.NewBezierSpline2d(
+		bendit.NewUniformKnots(),
+		cubic.NewBezierVertex2d(0, 0, 0, 0, 100, 0),
+		cubic.NewBezierVertex2d(100, 100, 0, 100, 0, 0))
+	*/
+	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
+	cubic.NewBezierVertex2d(100, 100, 0, 0, 120, 150),
+	cubic.NewBezierVertex2d(300, 300, 200, 300, 400, 300),
+	cubic.NewBezierVertex2d(500, 100, 490, 150, 0, 0))
+	*/
 }
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
@@ -85,7 +91,7 @@ func (pg *Playground) drawBySubdivisionDirect(qp *gui.QPainter) {
 		lineSegNo++
 		qp.DrawLine3(int(math.Round(x0)), int(math.Round(y0)), int(math.Round(x1)), int(math.Round(y1)))
 	})
-	pg.spline.Approximate(0.2, collector)
+	pg.spline.Approx(0.2, collector)
 }
 
 type QPathCollector2d struct {
@@ -105,7 +111,7 @@ func (lc QPathCollector2d) CollectLine(x0, y0, x3, y3 float64) {
 
 func (pg *Playground) drawBySubdivisionPath(qp *gui.QPainter) {
 	paco := NewQPathCollector2d()
-	pg.spline.Approximate(0.7, paco)
+	pg.spline.Approx(0.7, paco)
 	fmt.Printf("#line-segments: %v \n", paco.Path.ElementCount())
 	qp.StrokePath(paco.Path, gui.NewQPen())
 }
