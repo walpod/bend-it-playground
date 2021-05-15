@@ -86,10 +86,10 @@ func (pg *Playground) drawByIteration(qp *gui.QPainter) {
 
 func (pg *Playground) drawBySubdivisionDirect(qp *gui.QPainter) {
 	lineSegNo := 0
-	collector := cubic.NewDirectCollector2d(func(x0, y0, x1, y1 float64) {
-		fmt.Printf("%v-th line(%v, %v, %v, %v)\n", lineSegNo, x0, y0, x1, y1)
+	collector := bendit.NewDirectCollector2d(func(ts, te, sx, sy, ex, ey float64) {
+		fmt.Printf("%v-th line(%v, %v, %v, %v)\n", lineSegNo, sx, sy, ex, ey)
 		lineSegNo++
-		qp.DrawLine3(int(math.Round(x0)), int(math.Round(y0)), int(math.Round(x1)), int(math.Round(y1)))
+		qp.DrawLine3(int(math.Round(sx)), int(math.Round(sy)), int(math.Round(ex)), int(math.Round(ey)))
 	})
 	pg.spline.Approx(0.2, collector)
 }
@@ -102,11 +102,11 @@ func NewQPathCollector2d() *QPathCollector2d {
 	return &QPathCollector2d{Path: gui.NewQPainterPath()}
 }
 
-func (lc QPathCollector2d) CollectLine(x0, y0, x3, y3 float64) {
+func (lc QPathCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
 	if lc.Path.ElementCount() == 0 {
-		lc.Path.MoveTo(core.NewQPointF3(x0, y0))
+		lc.Path.MoveTo(core.NewQPointF3(sx, sy))
 	}
-	lc.Path.LineTo(core.NewQPointF3(x3, y3))
+	lc.Path.LineTo(core.NewQPointF3(ex, ey))
 }
 
 func (pg *Playground) drawBySubdivisionPath(qp *gui.QPainter) {
