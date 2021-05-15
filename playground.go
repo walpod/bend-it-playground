@@ -44,11 +44,9 @@ func (pg *Playground) buildSpline() {
 	pg.spline = cubic.NewHermiteSplineTanFinder2d([]float64{10, 100, 150}, []float64{10, 100, 10}, cubic.NaturalTanf2d{}, bendit.NewUniformKnots())
 
 	// canonical
-	cubics := []cubic.Cubic2d{cubic.NewCubic2d(
-		cubic.NewCubicPoly(100, 80, 40, 8),
-		cubic.NewCubicPoly(210, 120, 0, 9),
-	)}
-	pg.spline = cubic.NewCanonicalSpline2d(cubics, bendit.NewUniformKnots())
+	pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
+		cubic.NewCubic2d(cubic.NewCubicPoly(100, 80, 40, 8), cubic.NewCubicPoly(210, 120, 0, 9)),
+	)
 
 	// bezier
 	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
