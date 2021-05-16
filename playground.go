@@ -109,7 +109,7 @@ func (lc QPathCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
 
 func (pg *Playground) drawBySubdivisionPath(qp *gui.QPainter) {
 	paco := NewQPathCollector2d()
-	pg.spline.Approx(0.7, paco)
+	pg.spline.Approx(0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.Path.ElementCount())
 	qp.StrokePath(paco.Path, gui.NewQPen())
 }
