@@ -41,12 +41,13 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 
 func (pg *Playground) buildSpline() {
 	// hermite
-	pg.spline = cubic.NewHermiteSplineTanFinder2d([]float64{10, 100, 150}, []float64{10, 100, 10}, cubic.NaturalTanf2d{}, bendit.NewUniformKnots())
+	pg.spline = cubic.NewHermiteSplineTanFinder2d(bendit.NewUniformKnots(),
+		[]float64{10, 100, 150}, []float64{10, 100, 10}, cubic.NaturalTanf2d{})
 
 	// canonical
-	pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
+	/*pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
 		cubic.NewCubic2d(cubic.NewCubicPoly(100, 80, 40, 8), cubic.NewCubicPoly(210, 120, 0, 9)),
-	)
+	)*/
 
 	// bezier
 	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
@@ -66,9 +67,9 @@ func (pg *Playground) buildSpline() {
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
-	//pg.drawByIteration(qp)
+	pg.drawByIteration(qp)
 	//pg.drawBySubdivisionDirect(qp)
-	pg.drawBySubdivisionPath(qp)
+	//pg.drawBySubdivisionPath(qp)
 	//pg.drawTest(qp)
 	qp.DestroyQPainter()
 }
