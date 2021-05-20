@@ -41,11 +41,11 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 
 func (pg *Playground) buildSpline() {
 	// hermite
-	/*pg.spline = cubic.NewCardinalHermiteSpline2d(
-		bendit.NewUniformKnots(), 0,
+	/*pg.spline = cubic.NewNaturalHermiteSpline2d(
+		bendit.NewUniformKnots(),
+		cubic.NewRawHermiteVertex2d(10, 10),
 		cubic.NewRawHermiteVertex2d(100, 100),
-		cubic.NewRawHermiteVertex2d(400, 400),
-		cubic.NewRawHermiteVertex2d(700, 100),
+		cubic.NewRawHermiteVertex2d(150, 10),
 	)*/
 	pg.spline = cubic.NewNaturalHermiteSpline2d(
 		bendit.NewUniformKnots(),
@@ -53,12 +53,6 @@ func (pg *Playground) buildSpline() {
 		cubic.NewRawHermiteVertex2d(400, 400),
 		cubic.NewRawHermiteVertex2d(700, 100),
 	)
-	/*pg.spline = cubic.NewNaturalHermiteSpline2d(
-		bendit.NewUniformKnots(),
-		cubic.NewRawHermiteVertex2d(10, 10),
-		cubic.NewRawHermiteVertex2d(100, 100),
-		cubic.NewRawHermiteVertex2d(150, 10),
-	)*/
 
 	// canonical
 	/*pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
@@ -83,9 +77,9 @@ func (pg *Playground) buildSpline() {
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
-	pg.drawByIteration(qp)
+	//pg.drawByIteration(qp)
 	//pg.drawBySubdivisionDirect(qp)
-	//pg.drawBySubdivisionPath(qp)
+	pg.drawBySubdivisionPath(qp)
 	//pg.drawTest(qp)
 	qp.DestroyQPainter()
 }
