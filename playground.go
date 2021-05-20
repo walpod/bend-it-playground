@@ -41,13 +41,11 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 
 func (pg *Playground) buildSpline() {
 	// hermite
-	pg.spline = cubic.NewHermiteSplineTanFinder2d(bendit.NewUniformKnots(),
-		//cubic.NaturalTanf2d{},
-		cubic.NewCatmullRomTanf2d(),
-		cubic.NewHermiteVertex2d(10, 10, 0, 0, 0, 0),
-		cubic.NewHermiteVertex2d(100, 100, 0, 0, 0, 0),
-		cubic.NewHermiteVertex2d(150, 10, 0, 0, 0, 0),
-		//[]float64{10, 100, 150}, []float64{10, 100, 10}
+	pg.spline = cubic.NewCardinalHermiteSpline2d(
+		bendit.NewUniformKnots(), 0,
+		cubic.NewRawHermiteVertex2d(100, 100),
+		cubic.NewRawHermiteVertex2d(400, 400),
+		cubic.NewRawHermiteVertex2d(700, 100),
 	)
 
 	// canonical
