@@ -42,7 +42,13 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 func (pg *Playground) buildSpline() {
 	// hermite
 	pg.spline = cubic.NewHermiteSplineTanFinder2d(bendit.NewUniformKnots(),
-		[]float64{10, 100, 150}, []float64{10, 100, 10}, cubic.NaturalTanf2d{})
+		//cubic.NaturalTanf2d{},
+		cubic.NewCatmullRomTanf2d(),
+		cubic.NewHermiteVertex2d(10, 10, 0, 0, 0, 0),
+		cubic.NewHermiteVertex2d(100, 100, 0, 0, 0, 0),
+		cubic.NewHermiteVertex2d(150, 10, 0, 0, 0, 0),
+		//[]float64{10, 100, 150}, []float64{10, 100, 10}
+	)
 
 	// canonical
 	/*pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
