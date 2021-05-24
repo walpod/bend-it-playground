@@ -13,7 +13,6 @@ import (
 type Playground struct {
 	//window *widgets.QMainWindow
 	//canvas *widgets.QWidget
-	//spline *cubic.BezierSpline2d // TODO for a short time, then change back to bendit.Spline2d
 	spline bendit.Spline2d
 }
 
@@ -77,14 +76,29 @@ func (pg *Playground) buildSpline() {
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
-	//pg.drawByIteration(qp)
-	//pg.drawBySubdivisionDirect(qp)
-	pg.drawBySubdivisionPath(qp)
+
+	// draw spline
+	//pg.drawSplineByIteration(qp)
+	//pg.drawSplineBySubdivisionDirect(qp)
+	pg.drawSplineBySubdivisionPath(qp)
+
+	// draw spline vertices
+	qp.Brush().SetStyle(core.Qt__SolidPattern)
+	knots := pg.spline.Knots()
+	for i := 0; i < pg.spline.SegmentCnt(); i++ {
+		tstart, _ := knots.SegmentRange(i)
+		x, y := pg.spline.At(tstart)
+		qp.DrawEllipse4(core.NewQPointF3(x, y), 5, 5)
+	}
+	_, tend := knots.SegmentRange(pg.spline.SegmentCnt() - 1)
+	x, y := pg.spline.At(tend)
+	qp.DrawEllipse4(core.NewQPointF3(x, y), 5, 5)
+
 	//pg.drawTest(qp)
 	qp.DestroyQPainter()
 }
 
-func (pg *Playground) drawByIteration(qp *gui.QPainter) {
+func (pg *Playground) drawSplineByIteration(qp *gui.QPainter) {
 	dom := pg.spline.Knots().Domain(pg.spline.SegmentCnt())
 	stepSize := dom.End / 100
 	for t := dom.Start; t < dom.End; t += stepSize {
@@ -93,7 +107,8 @@ func (pg *Playground) drawByIteration(qp *gui.QPainter) {
 	}
 }
 
-func (pg *Playground) drawBySubdivisionDirect(qp *gui.QPainter) {
+func (pg *Playground) drawSplineBySubdivisionDirect(qp *gui.QPainter) {
+	// draw spline
 	lineSegNo := 0
 	collector := bendit.NewDirectCollector2d(func(ts, te, sx, sy, ex, ey float64) {
 		fmt.Printf("%v-th line(%v, %v, %v, %v)\n", lineSegNo, sx, sy, ex, ey)
@@ -118,7 +133,7 @@ func (lc QPathCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
 	lc.Path.LineTo(core.NewQPointF3(ex, ey))
 }
 
-func (pg *Playground) drawBySubdivisionPath(qp *gui.QPainter) {
+func (pg *Playground) drawSplineBySubdivisionPath(qp *gui.QPainter) {
 	paco := NewQPathCollector2d()
 	pg.spline.Approx(0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.Path.ElementCount())
