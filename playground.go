@@ -86,11 +86,11 @@ func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp.Brush().SetStyle(core.Qt__SolidPattern)
 	knots := pg.spline.Knots()
 	for i := 0; i < pg.spline.SegmentCnt(); i++ {
-		tstart, _ := knots.SegmentRange(i)
+		tstart := knots.Knot(i)
 		x, y := pg.spline.At(tstart)
 		qp.DrawEllipse4(core.NewQPointF3(x, y), 5, 5)
 	}
-	_, tend := knots.SegmentRange(pg.spline.SegmentCnt() - 1)
+	tend := knots.Knot(pg.spline.SegmentCnt())
 	x, y := pg.spline.At(tend)
 	qp.DrawEllipse4(core.NewQPointF3(x, y), 5, 5)
 
