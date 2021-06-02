@@ -42,16 +42,20 @@ func (pg *Playground) buildSpline() {
 	// hermite
 	/*pg.spline = cubic.NewNaturalHermiteSpline2d(
 		bendit.NewUniformKnots(),
-		cubic.NewRawHermiteVertex2d(10, 10),
-		cubic.NewRawHermiteVertex2d(100, 100),
-		cubic.NewRawHermiteVertex2d(150, 10),
+		cubic.NewHermiteRawVx2(10, 10),
+		cubic.NewHermiteRawVx2(100, 100),
+		cubic.NewHermiteRawVx2(150, 10),
 	)*/
 	pg.spline = cubic.NewNaturalHermiteSpline2d(
 		bendit.NewUniformKnots(),
-		cubic.NewRawHermiteVertex2d(100, 100),
-		cubic.NewRawHermiteVertex2d(400, 400),
-		cubic.NewRawHermiteVertex2d(700, 100),
+		cubic.NewHermiteRawVx2(100, 100),
+		cubic.NewHermiteRawVx2(400, 400),
+		cubic.NewHermiteRawVx2(700, 100),
 	)
+	//herm := cubic.NewHermiteSpline2d(bendit.NewUniformKnots())
+	//herm.AddVert(cubic.NewHermiteRawVx2(100, 100))
+	//herm.AddCoord(700, 100)
+	//herm.InsCoord(1, 400, 400)
 
 	// canonical
 	/*pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
@@ -60,17 +64,17 @@ func (pg *Playground) buildSpline() {
 
 	// bezier
 	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
-		cubic.NewBezierVertex2d(200, 200, 0, 0, 210, 200),
-		cubic.NewBezierVertex2d(400, 400, 390, 400, 0, 0))
+		cubic.NewBezierVx2(200, 200, 0, 0, 210, 200),
+		cubic.NewBezierVx2(400, 400, 390, 400, 0, 0))
 	pg.spline = cubic.NewBezierSpline2d(
 		bendit.NewUniformKnots(),
-		cubic.NewBezierVertex2d(0, 0, 0, 0, 100, 0),
-		cubic.NewBezierVertex2d(100, 100, 0, 100, 0, 0))
+		cubic.NewBezierVx2(0, 0, 0, 0, 100, 0),
+		cubic.NewBezierVx2(100, 100, 0, 100, 0, 0))
 	*/
 	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
-	cubic.NewBezierVertex2d(100, 100, 0, 0, 120, 150),
-	cubic.NewBezierVertex2d(300, 300, 200, 300, 400, 300),
-	cubic.NewBezierVertex2d(500, 100, 490, 150, 0, 0))
+	cubic.NewBezierVx2(100, 100, 0, 0, 120, 150),
+	cubic.NewBezierVx2(300, 300, 200, 300, 400, 300),
+	cubic.NewBezierVx2(500, 100, 490, 150, 0, 0))
 	*/
 }
 
@@ -85,14 +89,10 @@ func (pg *Playground) paint(canvas *widgets.QWidget) {
 	// draw spline vertices
 	qp.Brush().SetStyle(core.Qt__SolidPattern)
 	knots := pg.spline.Knots()
-	for i := 0; i < pg.spline.SegmentCnt(); i++ {
-		tstart := knots.Knot(i)
-		x, y := pg.spline.At(tstart)
+	for i := 0; i <= pg.spline.SegmentCnt(); i++ { // TODO use knots.Count()
+		x, y := pg.spline.At(knots.Knot(i))
 		qp.DrawEllipse4(core.NewQPointF3(x, y), 5, 5)
 	}
-	tend := knots.Knot(pg.spline.SegmentCnt())
-	x, y := pg.spline.At(tend)
-	qp.DrawEllipse4(core.NewQPointF3(x, y), 5, 5)
 
 	//pg.drawTest(qp)
 	qp.DestroyQPainter()
