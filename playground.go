@@ -42,18 +42,18 @@ func (pg *Playground) buildSpline() {
 	// hermite
 	/*pg.spline = cubic.NewNaturalHermiteSpline2d(
 		bendit.NewUniformKnots(),
-		cubic.NewHermiteRawVx2(10, 10),
-		cubic.NewHermiteRawVx2(100, 100),
-		cubic.NewHermiteRawVx2(150, 10),
+		cubic.NewHermiteVx2Raw(10, 10),
+		cubic.NewHermiteVx2Raw(100, 100),
+		cubic.NewHermiteVx2Raw(150, 10),
 	)*/
 	pg.spline = cubic.NewNaturalHermiteSpline2d(
 		bendit.NewUniformKnots(),
-		cubic.NewHermiteRawVx2(100, 100),
-		cubic.NewHermiteRawVx2(400, 400),
-		cubic.NewHermiteRawVx2(700, 100),
+		cubic.NewHermiteVx2Raw(100, 100),
+		cubic.NewHermiteVx2Raw(400, 400),
+		cubic.NewHermiteVx2Raw(700, 100),
 	)
 	//herm := cubic.NewHermiteSpline2d(bendit.NewUniformKnots())
-	//herm.AddVert(cubic.NewHermiteRawVx2(100, 100))
+	//herm.Add(cubic.NewHermiteVx2Raw(100, 100))
 	//herm.AddCoord(700, 100)
 	//herm.InsCoord(1, 400, 400)
 
