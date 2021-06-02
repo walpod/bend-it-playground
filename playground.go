@@ -89,8 +89,9 @@ func (pg *Playground) paint(canvas *widgets.QWidget) {
 	// draw spline vertices
 	qp.Brush().SetStyle(core.Qt__SolidPattern)
 	knots := pg.spline.Knots()
-	for i := 0; i <= pg.spline.SegmentCnt(); i++ { // TODO use knots.Count()
-		x, y := pg.spline.At(knots.Knot(i))
+	for i := 0; i < knots.Count(); i++ {
+		t, _ := knots.Knot(i)
+		x, y := pg.spline.At(t)
 		qp.DrawEllipse4(core.NewQPointF3(x, y), 5, 5)
 	}
 
@@ -99,7 +100,7 @@ func (pg *Playground) paint(canvas *widgets.QWidget) {
 }
 
 func (pg *Playground) drawSplineByIteration(qp *gui.QPainter) {
-	dom := pg.spline.Knots().Domain(pg.spline.SegmentCnt())
+	dom := pg.spline.Knots().Domain()
 	stepSize := dom.End / 100
 	for t := dom.Start; t < dom.End; t += stepSize {
 		x, y := pg.spline.At(t)
