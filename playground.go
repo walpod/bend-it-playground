@@ -45,17 +45,20 @@ func (pg *Playground) buildSpline() {
 		cubic.NewHermiteVx2Raw(10, 10),
 		cubic.NewHermiteVx2Raw(100, 100),
 		cubic.NewHermiteVx2Raw(150, 10),
-	)*/
+	)
 	pg.spline = cubic.NewNaturalHermiteSpline2d(
-		bendit.NewUniformKnots(),
+		nil,
 		cubic.NewHermiteVx2Raw(100, 100),
 		cubic.NewHermiteVx2Raw(400, 400),
 		cubic.NewHermiteVx2Raw(700, 100),
-	)
-	//herm := cubic.NewHermiteSpline2d(bendit.NewUniformKnots())
-	//herm.Add(cubic.NewHermiteVx2Raw(100, 100))
-	//herm.AddCoord(700, 100)
+	)*/
+	herm := cubic.NewNaturalHermiteSpline2d(nil)
+	herm.Add(cubic.NewHermiteVx2Raw(100, 100))
+	herm.Add(cubic.NewHermiteVx2Raw(400, 400))
+	herm.Add(cubic.NewHermiteVx2Raw(700, 100))
+	herm.Build()
 	//herm.InsCoord(1, 400, 400)
+	pg.spline = herm
 
 	// canonical
 	/*pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
