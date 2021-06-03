@@ -103,9 +103,10 @@ func (pg *Playground) paint(canvas *widgets.QWidget) {
 }
 
 func (pg *Playground) drawSplineByIteration(qp *gui.QPainter) {
-	dom := pg.spline.Knots().Domain()
-	stepSize := dom.End / 100
-	for t := dom.Start; t < dom.End; t += stepSize {
+	knots := pg.spline.Knots()
+	tend := knots.Tend()
+	stepSize := tend / 100
+	for t := knots.Tstart(); t < tend; t += stepSize {
 		x, y := pg.spline.At(t)
 		qp.DrawPoint3(int(math.Round(x)), int(math.Round(y)))
 	}
