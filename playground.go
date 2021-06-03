@@ -40,14 +40,12 @@ func (pg *Playground) build(window *widgets.QMainWindow) {
 
 func (pg *Playground) buildSpline() {
 	// hermite
-	/*pg.spline = cubic.NewNaturalHermiteSpline2d(
-		bendit.NewUniformKnots(),
+	/*pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
 		cubic.NewHermiteVx2Raw(10, 10),
 		cubic.NewHermiteVx2Raw(100, 100),
 		cubic.NewHermiteVx2Raw(150, 10),
 	)
-	pg.spline = cubic.NewNaturalHermiteSpline2d(
-		nil,
+	pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
 		cubic.NewHermiteVx2Raw(100, 100),
 		cubic.NewHermiteVx2Raw(400, 400),
 		cubic.NewHermiteVx2Raw(700, 100),
@@ -61,24 +59,21 @@ func (pg *Playground) buildSpline() {
 	pg.spline = herm
 
 	// canonical
-	/*pg.spline = cubic.NewCanonicalSpline2d(bendit.NewUniformKnots(),
+	/*pg.spline = cubic.NewCanonicalSpline2d(nil,
 		cubic.NewCubic2d(cubic.NewCubicPoly(100, 80, 40, 8), cubic.NewCubicPoly(210, 120, 0, 9)),
 	)*/
 
 	// bezier
-	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
+	/*pg.spline = cubic.NewBezierSpline2d(nil,
 		cubic.NewBezierVx2(200, 200, 0, 0, 210, 200),
 		cubic.NewBezierVx2(400, 400, 390, 400, 0, 0))
-	pg.spline = cubic.NewBezierSpline2d(
-		bendit.NewUniformKnots(),
+	pg.spline = cubic.NewBezierSpline2d(nil,
 		cubic.NewBezierVx2(0, 0, 0, 0, 100, 0),
-		cubic.NewBezierVx2(100, 100, 0, 100, 0, 0))
-	*/
-	/*pg.spline = cubic.NewBezierSpline2d(bendit.NewUniformKnots(),
+		cubic.NewBezierVx2(100, 100, 0, 100, 0, 0))*/
+	/*pg.spline = cubic.NewBezierSpline2d(nil,
 	cubic.NewBezierVx2(100, 100, 0, 0, 120, 150),
 	cubic.NewBezierVx2(300, 300, 200, 300, 400, 300),
-	cubic.NewBezierVx2(500, 100, 490, 150, 0, 0))
-	*/
+	cubic.NewBezierVx2(500, 100, 490, 150, 0, 0))*/
 }
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
