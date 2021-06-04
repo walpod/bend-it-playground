@@ -54,7 +54,7 @@ func (pg *Playground) buildSpline() {
 	herm.Add(cubic.NewHermiteVx2Raw(100, 100))
 	herm.Add(cubic.NewHermiteVx2Raw(400, 400))
 	herm.Add(cubic.NewHermiteVx2Raw(700, 100))
-	herm.Build()
+	//herm.Prepare()
 	//herm.InsCoord(1, 400, 400)
 	pg.spline = herm
 
