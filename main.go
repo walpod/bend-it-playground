@@ -14,7 +14,8 @@ func main() {
 	window.SetWindowTitle("bend-it playground")
 
 	var playground Playground
-	playground.build(window)
+	//playground.build(window)
+	playground.buildWthScene(window)
 
 	window.Show()
 

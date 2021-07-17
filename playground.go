@@ -16,26 +16,49 @@ type Playground struct {
 	spline bendit.Spline2d
 }
 
-func (pg *Playground) build(window *widgets.QMainWindow) {
-	//pg.window = window
+/*func (pg *Playground) build(mainWindow *widgets.QMainWindow) {
+	//pg.mainWindow = mainWindow
 
-	/*statusbar := widgets.NewQStatusBar(window)
-	window.SetStatusBar(statusbar)
-	statusbar.ShowMessage("the status bar ...", 0)*/
+	//statusbar := widgets.NewQStatusBar(mainWindow)
+	//mainWindow.SetStatusBar(statusbar)
+	//statusbar.ShowMessage("the status bar ...", 0)
 
-	central := widgets.NewQWidget(window, 0)
+	central := widgets.NewQWidget(mainWindow, 0)
 	central.SetLayout(widgets.NewQVBoxLayout())
-	window.SetCentralWidget(central)
+	mainWindow.SetCentralWidget(central)
 
 	canvas := widgets.NewQWidget(central, 0)
-	//canvas.Resize2(800, 500)
+	canvas.Resize2(800, 500)
 	central.Layout().AddWidget(canvas)
 
 	pg.buildSpline()
 
-	canvas.ConnectPaintEvent(func(vqp *gui.QPaintEvent) {
-		pg.paint(canvas)
+	central.ConnectPaintEvent(func(vqp *gui.QPaintEvent) {
+		pg.paint(central)
 	})
+
+	canvas.ConnectMousePressEvent(func(event *gui.QMouseEvent) {
+		fmt.Printf("mouse event but no info about position (?): %v", *event)
+	})
+}*/
+
+func (pg *Playground) buildWthScene(mainWindow *widgets.QMainWindow) {
+	central := widgets.NewQWidget(mainWindow, 0)
+	mainWindow.SetCentralWidget(central)
+
+	scene := widgets.NewQGraphicsScene(central)
+	scene.SetSceneRect2(0, 0, float64(mainWindow.Width()), float64(mainWindow.Height()))
+
+	view := widgets.NewQGraphicsView(central)
+	view.SetScene(scene)
+
+	layout := widgets.NewQVBoxLayout()
+	layout.AddWidget(view, 0, 0)
+
+	central.SetLayout(layout)
+
+	pg.buildSpline()
+	pg.addSplineToScene(scene)
 }
 
 func (pg *Playground) buildSpline() {
@@ -54,7 +77,6 @@ func (pg *Playground) buildSpline() {
 	herm.Add(cubic.NewHermiteVx2Raw(100, 100))
 	herm.Add(cubic.NewHermiteVx2Raw(400, 400))
 	herm.Add(cubic.NewHermiteVx2Raw(700, 100))
-	//herm.Prepare()
 	//herm.InsCoord(1, 400, 400)
 	pg.spline = herm
 
@@ -74,6 +96,73 @@ func (pg *Playground) buildSpline() {
 	cubic.NewBezierVx2(100, 100, 0, 0, 120, 150),
 	cubic.NewBezierVx2(300, 300, 200, 300, 400, 300),
 	cubic.NewBezierVx2(500, 100, 490, 150, 0, 0))*/
+}
+
+type VertexEventHandler struct {
+	spline                   bendit.Spline2d
+	knotNo                   int
+	mousePressX, mousePressY float64
+}
+
+func (vc *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsSceneMouseEvent) {
+	//vc.mousePressX, vc.mousePressY = event.Pos().X(), event.Pos().Y()
+	vc.mousePressX = event.Pos().X()
+	fmt.Printf("mouse-press-event for vertex with knotNo = %v at %v/%v\n", vc.knotNo, vc.mousePressX, vc.mousePressY)
+}
+
+func (vc *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
+	pos := event.Pos()
+	if v, err := vc.spline.Vertex(vc.knotNo); err != nil {
+		fmt.Printf(err.Error())
+		return
+	} else {
+		lastx, lasty := v.Coord()
+		fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, pressed at %v/%v, for knot previously at %v/%v\n",
+			vc.knotNo, pos.X(), pos.Y(), vc.mousePressX, vc.mousePressY, lastx, lasty)
+
+		// TODO move vertex
+	}
+}
+
+func (pg Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
+	//red := gui.NewQColor3(255, 0, 0, 255)
+	pen := gui.NewQPen3(gui.NewQColor3(0, 0, 0, 255))
+	brush := gui.NewQBrush2(core.Qt__SolidPattern)
+	radius := 6.0
+
+	// vertices
+	knots := pg.spline.Knots()
+	for i := 0; i < knots.Count(); i++ {
+		t, _ := knots.Knot(i)
+		x, y := pg.spline.At(t)
+		veh := VertexEventHandler{spline: pg.spline, knotNo: i}
+		ell := widgets.NewQGraphicsEllipseItem3(x-radius, y-radius, 2*radius, 2*radius, nil)
+		ell.SetBrush(brush)
+		ell.ConnectMousePressEvent(veh.HandleMousePressEvent)
+		/*ell.ConnectMouseMoveEvent(func(event *widgets.QGraphicsSceneMouseEvent) {
+			pos, lastPos := event.Pos(), event.LastPos()
+			fmt.Printf("mouse moved to %v/%v, previously at %v/%v\n", pos.X(), pos.Y(), lastPos.X(), lastPos.Y())
+		})*/
+		ell.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
+
+		scene.AddItem(ell)
+	}
+
+	// spline
+	/*pg.spline.Approx(0.5, bendit.NewDirectCollector2d(func(tstart, tend, pstartx, pstarty, pendx, pendy float64) {
+		scene.AddLine2(pstartx, pstarty, pendx, pendy, pen)
+	}))*/
+
+	paco := NewQPathCollector2d()
+	pg.spline.Approx(0.5, paco)
+	fmt.Printf("#line-segments: %v \n", paco.Path.ElementCount())
+	scene.AddPath(paco.Path, pen, gui.NewQBrush())
+	path := widgets.NewQGraphicsPathItem2(paco.Path, nil)
+	path.SetPen(pen)
+	scene.AddItem(path)
+	//fmt.Printf("scene items# = %v", len(scene.Items2(core.NewQPointF3(100,100), core.Qt__IntersectsItemShape, core.Qt__AscendingOrder, gui.NewQTransform2())))
+
+	scene.RemoveItem(path)
 }
 
 func (pg *Playground) paint(canvas *widgets.QWidget) {
