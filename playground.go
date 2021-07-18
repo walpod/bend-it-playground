@@ -72,13 +72,14 @@ func (pg *Playground) buildSpline() {
 		cubic.NewHermiteVx2Raw(100, 100),
 		cubic.NewHermiteVx2Raw(400, 400),
 		cubic.NewHermiteVx2Raw(700, 100),
-	)*/
+	)
 	herm := cubic.NewNaturalHermiteSpline2d(nil)
 	herm.Add(cubic.NewHermiteVx2Raw(100, 100))
 	herm.Add(cubic.NewHermiteVx2Raw(400, 400))
 	herm.Add(cubic.NewHermiteVx2Raw(700, 100))
 	//herm.InsCoord(1, 400, 400)
 	pg.spline = herm
+	*/
 
 	// canonical
 	/*pg.spline = cubic.NewCanonicalSpline2d(nil,
@@ -86,73 +87,165 @@ func (pg *Playground) buildSpline() {
 	)*/
 
 	// bezier
-	/*pg.spline = cubic.NewBezierSpline2d(nil,
-		cubic.NewBezierVx2(200, 200, 0, 0, 210, 200),
-		cubic.NewBezierVx2(400, 400, 390, 400, 0, 0))
 	pg.spline = cubic.NewBezierSpline2d(nil,
-		cubic.NewBezierVx2(0, 0, 0, 0, 100, 0),
-		cubic.NewBezierVx2(100, 100, 0, 100, 0, 0))*/
-	/*pg.spline = cubic.NewBezierSpline2d(nil,
-	cubic.NewBezierVx2(100, 100, 0, 0, 120, 150),
-	cubic.NewBezierVx2(300, 300, 200, 300, 400, 300),
-	cubic.NewBezierVx2(500, 100, 490, 150, 0, 0))*/
+		cubic.NewBezierVx2(200, 200, nil, cubic.NewControl(210, 200)),
+		cubic.NewBezierVx2(400, 400, cubic.NewControl(390, 400), nil))
+	pg.spline = cubic.NewBezierSpline2d(nil,
+		cubic.NewBezierVx2(0, 0, nil, cubic.NewControl(100, 0)),
+		cubic.NewBezierVx2(100, 100, cubic.NewControl(0, 100), nil))
+	pg.spline = cubic.NewBezierSpline2d(nil,
+		cubic.NewBezierVx2(100, 100, nil, cubic.NewControl(120, 150)),
+		cubic.NewBezierVx2(300, 300, cubic.NewControl(200, 300), cubic.NewReflective()), //cubic.NewControl(400, 300)),
+		cubic.NewBezierVx2(500, 100, cubic.NewControl(490, 150), nil))
 }
 
 type VertexEventHandler struct {
-	spline                   bendit.Spline2d
-	knotNo                   int
-	mousePressX, mousePressY float64
+	spline bendit.Spline2d
+	knotNo int
+	//mousePressX, mousePressY float64
 }
 
-func (vc *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsSceneMouseEvent) {
-	//vc.mousePressX, vc.mousePressY = event.Pos().X(), event.Pos().Y()
-	vc.mousePressX = event.Pos().X()
-	fmt.Printf("mouse-press-event for vertex with knotNo = %v at %v/%v\n", vc.knotNo, vc.mousePressX, vc.mousePressY)
+func (eh *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsSceneMouseEvent) {
+	//eh.mousePressX, eh.mousePressY = event.Pos().X(), event.Pos().Y()
+	//fmt.Printf("mouse-press-event for vertex with knotNo = %v at %v/%v\n", eh.knotNo, eh.mousePressX, eh.mousePressY)
 }
 
-func (vc *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
+func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	pos := event.Pos()
-	if v, err := vc.spline.Vertex(vc.knotNo); err != nil {
+	if v, err := eh.spline.Vertex(eh.knotNo); err != nil {
 		fmt.Printf(err.Error())
 		return
 	} else {
-		lastx, lasty := v.Coord()
-		fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, pressed at %v/%v, for knot previously at %v/%v\n",
-			vc.knotNo, pos.X(), pos.Y(), vc.mousePressX, vc.mousePressY, lastx, lasty)
+		knotX, knotY := v.Coord()
+		fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
+			eh.knotNo, pos.X(), pos.Y(), knotX, knotY)
 
 		// TODO move vertex
 	}
 }
 
+type BezierControlEventHandler struct {
+	bezier    *cubic.BezierSpline2d
+	knotNo    int
+	isEntry   bool
+	qtEllipse *widgets.QGraphicsEllipseItem
+	radius    float64
+}
+
+func (eh *BezierControlEventHandler) HandleMousePressEvent(event *widgets.QGraphicsSceneMouseEvent) {
+}
+
+func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
+	pos := event.Pos()
+	if bvt, err := eh.bezier.BezierVertex(eh.knotNo); err != nil {
+		fmt.Printf(err.Error())
+		return
+	} else {
+		entry := bvt.Entry()
+		exit := bvt.Exit()
+
+		ct := cubic.NewControl(pos.X(), pos.Y())
+		var oct cubic.Controller
+
+		// are entry and exit linked together? = is one calculated based on the other
+		linked := (bvt.Entry() != nil && bvt.Exit() != nil) && (bvt.Entry().IsCalculated() || bvt.Exit().IsCalculated())
+		if linked {
+			// other controller ist the calculated one
+			if entry.IsCalculated() {
+				oct = entry
+			} else {
+				oct = exit
+			}
+		}
+
+		if eh.isEntry {
+			entry = ct
+			if oct != nil {
+				exit = oct
+			}
+		} else {
+			exit = ct
+			if oct != nil {
+				entry = oct
+			}
+		}
+
+		// modify bezier
+		x, y := bvt.Coord()
+		eh.bezier.Update(eh.knotNo, x, y, entry, exit)
+
+		// move circle TODO other one if linked?
+		eh.qtEllipse.SetRect2(ct.ControlX()-eh.radius, ct.ControlY()-eh.radius, 2*eh.radius, 2*eh.radius)
+
+		// TODO redraw spline (at least part of it)
+
+		/*lastx, lasty := bvt.Coord()
+		fmt.Printf("mouse-released-event for vertex with knotNo = %vx at %vx/%vx, for knot previously at %vx/%vx\n",
+			eh.knotNo, pos.X(), pos.Y(), lastx, lasty)*/
+	}
+}
+
 func (pg Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
-	//red := gui.NewQColor3(255, 0, 0, 255)
-	pen := gui.NewQPen3(gui.NewQColor3(0, 0, 0, 255))
+	// colors
+	black := gui.NewQColor2(core.Qt__black)
+	gray := gui.NewQColor2(core.Qt__gray)
+
+	// styles for spline and vertices
+	//pen := gui.NewQPen3(gui.NewQColor3(0, 0, 0, 255))
+	pen := gui.NewQPen3(black)
 	brush := gui.NewQBrush2(core.Qt__SolidPattern)
 	radius := 6.0
+
+	// styles for controls
+	penCt := gui.NewQPen3(gray) //gui.NewQPen2(core.Qt__DotLine)
+	brushCt := gui.NewQBrush3(gray, core.Qt__SolidPattern)
+
+	// vertex as solid black circle
+	addVertexToScene := func(knotNo int, x float64, y float64) {
+		veh := VertexEventHandler{spline: pg.spline, knotNo: knotNo}
+		ellvx := widgets.NewQGraphicsEllipseItem3(x-radius, y-radius, 2*radius, 2*radius, nil)
+		ellvx.SetBrush(brush)
+		ellvx.ConnectMousePressEvent(veh.HandleMousePressEvent)
+		ellvx.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
+		scene.AddItem(ellvx)
+	}
+
+	// bezier-control as solid gray circle
+	addBezierControlToScene := func(knotNo int, ct cubic.Controller, isEntry bool) {
+		if ct != nil {
+			//scene.AddLine2(x, y, bvx.Entry().ControlX(), bvx.Entry().ControlY(), penCt)
+			_ = penCt
+			ellct := widgets.NewQGraphicsEllipseItem3(ct.ControlX()-radius, ct.ControlY()-radius, 2*radius, 2*radius, nil)
+			ellct.SetBrush(brushCt)
+			scene.AddItem(ellct)
+			cteh := BezierControlEventHandler{bezier: pg.spline.(*cubic.BezierSpline2d), knotNo: knotNo, isEntry: true, qtEllipse: ellct, radius: radius}
+			ellct.ConnectMousePressEvent(cteh.HandleMousePressEvent)
+			ellct.ConnectMouseReleaseEvent(cteh.HandleMouseReleaseEvent)
+		}
+	}
 
 	// vertices
 	knots := pg.spline.Knots()
 	for i := 0; i < knots.Count(); i++ {
 		t, _ := knots.Knot(i)
 		x, y := pg.spline.At(t)
-		veh := VertexEventHandler{spline: pg.spline, knotNo: i}
-		ell := widgets.NewQGraphicsEllipseItem3(x-radius, y-radius, 2*radius, 2*radius, nil)
-		ell.SetBrush(brush)
-		ell.ConnectMousePressEvent(veh.HandleMousePressEvent)
-		/*ell.ConnectMouseMoveEvent(func(event *widgets.QGraphicsSceneMouseEvent) {
-			pos, lastPos := event.Pos(), event.LastPos()
-			fmt.Printf("mouse moved to %v/%v, previously at %v/%v\n", pos.X(), pos.Y(), lastPos.X(), lastPos.Y())
-		})*/
-		ell.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
+		addVertexToScene(i, x, y)
 
-		scene.AddItem(ell)
+		// controls
+		switch spl := pg.spline.(type) {
+		case *cubic.BezierSpline2d:
+			// bezier control points
+			vx, _ := spl.Vertex(i)
+			bvx := vx.(*cubic.BezierVx2)
+			addBezierControlToScene(i, bvx.Entry(), true)
+			addBezierControlToScene(i, bvx.Exit(), false)
+		}
 	}
 
-	// spline
+	// line segments
 	/*pg.spline.Approx(0.5, bendit.NewDirectCollector2d(func(tstart, tend, pstartx, pstarty, pendx, pendy float64) {
 		scene.AddLine2(pstartx, pstarty, pendx, pendy, pen)
 	}))*/
-
 	paco := NewQPathCollector2d()
 	pg.spline.Approx(0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.Path.ElementCount())
