@@ -137,53 +137,37 @@ func (eh *BezierControlEventHandler) HandleMousePressEvent(event *widgets.QGraph
 }
 
 func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
-	pos := event.Pos()
 	bvt := eh.bezier.BezierVertex(eh.knotNo)
 	entry := bvt.Entry()
 	exit := bvt.Exit()
-	annexVt := eh.bezier.Annex().ToVertex(eh.knotNo).(*AnnexToVertex)
+	annexVt := eh.bezier.Annex().GetFromVertex(eh.knotNo).(*AnnexToVertex)
 
+	pos := event.Pos()
 	ct := cubic.NewControl(pos.X(), pos.Y())
-	var oct cubic.Controller
-	var ellCt *widgets.QGraphicsEllipseItem
-	var ellOct *widgets.QGraphicsEllipseItem
-
-	// are entry and exit linked together? = is one calculated based on the other
-	linked := (bvt.Entry() != nil && bvt.Exit() != nil) && (bvt.Entry().IsCalculated() || bvt.Exit().IsCalculated())
-	if linked {
-		// other controller ist the calculated one
-		if entry.IsCalculated() {
-			oct = entry
-		} else {
-			oct = exit
-		}
-	}
 
 	// entry or exit
 	if eh.isEntry {
-		entry = ct
-		ellCt = annexVt.ellEntry
-		if oct != nil {
-			exit = oct
-			ellOct = annexVt.ellExit
+		if bvt.Entry().IsCalculated() {
+			bvt.FlipCalculatedController()
 		}
+		entry, exit = ct, bvt.Exit()
 	} else {
-		exit = ct
-		ellCt = annexVt.ellExit
-		if oct != nil {
-			entry = oct
-			ellOct = annexVt.ellEntry
+		if bvt.Exit().IsCalculated() {
+			bvt.FlipCalculatedController()
 		}
+		entry, exit = bvt.Entry(), ct
 	}
 
 	// modify bezier
 	x, y := bvt.Coord()
 	eh.bezier.Update(eh.knotNo, x, y, entry, exit)
 
-	// move control circle
-	ellCt.SetRect2(ct.ControlX()-eh.radius, ct.ControlY()-eh.radius, 2*eh.radius, 2*eh.radius)
-	if ellOct != nil {
-		ellOct.SetRect2(oct.ControlX()-eh.radius, oct.ControlY()-eh.radius, 2*eh.radius, 2*eh.radius)
+	// move control circles
+	if entry != nil {
+		annexVt.ellEntry.SetRect2(entry.ControlX()-eh.radius, entry.ControlY()-eh.radius, 2*eh.radius, 2*eh.radius)
+	}
+	if exit != nil {
+		annexVt.ellExit.SetRect2(exit.ControlX()-eh.radius, exit.ControlY()-eh.radius, 2*eh.radius, 2*eh.radius)
 	}
 
 	// TODO redraw spline (at least part of it)
@@ -191,7 +175,6 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	/*lastx, lasty := bvt.Coord()
 	fmt.Printf("mouse-released-event for vertex with knotNo = %vx at %vx/%vx, for knot previously at %vx/%vx\n",
 		eh.knotNo, pos.X(), pos.Y(), lastx, lasty)*/
-
 }
 
 func (pg Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
