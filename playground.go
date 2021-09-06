@@ -248,18 +248,18 @@ func (pg Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
 	scene.RemoveItem(path)*/
 }
 
-func (pg *Playground) paint(canvas *widgets.QWidget) {
+/*func (pg *Playground) paint(canvas *widgets.QWidget) {
 	qp := gui.NewQPainter2(canvas)
 
 	// draw spline
 	//pg.drawSplineByIteration(qp)
 	//pg.drawSplineBySubdivisionDirect(qp)
-	pg.drawSplineBySubdivisionPath(qp)
+	//pg.drawSplineBySubdivisionPath(qp)
 
 	//pg.drawTest(qp)
 
 	qp.DestroyQPainter()
-}
+}*/
 
 func (pg *Playground) drawSplineByIteration(qp *gui.QPainter) {
 	knots := pg.spline.Knots()
@@ -304,7 +304,7 @@ func (pg *Playground) drawSplineBySubdivisionPath(qp *gui.QPainter) {
 	qp.StrokePath(paco.Path, gui.NewQPen())
 }
 
-func (pg *Playground) drawTest(qp *gui.QPainter) {
+/*func (pg *Playground) drawTest(qp *gui.QPainter) {
 	pointsf := []*core.QPointF{
 		core.NewQPointF3(250, 287),
 		core.NewQPointF3(254, 289),
@@ -330,4 +330,4 @@ func (pg *Playground) drawTest(qp *gui.QPainter) {
 	path.LineTo(core.NewQPointF3(263, 293))
 	path.LineTo(core.NewQPointF3(500, 100))
 	qp.StrokePath(path, gui.NewQPen())
-}
+}*/
