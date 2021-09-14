@@ -9,12 +9,30 @@ import (
 	"github.com/walpod/bend-it/cubic"
 )
 
+type GraphicsAttachments struct {
+	Scene    *widgets.QGraphicsScene
+	Segments []*widgets.QGraphicsPathItem // TODO how to keep in sync with spline
+}
+
+func (am *GraphicsAttachments) AttachSegment(segmentNo int, path *widgets.QGraphicsPathItem) {
+	if segmentNo >= len(am.Segments) {
+		newCnt := segmentNo - len(am.Segments) + 1
+		am.Segments = append(am.Segments, make([]*widgets.QGraphicsPathItem, newCnt)...)
+	}
+	am.Segments[segmentNo] = path
+}
+
+func (am *GraphicsAttachments) Segment(segmentNo int) *widgets.QGraphicsPathItem {
+	if segmentNo >= len(am.Segments) {
+		return nil
+	} else {
+		return am.Segments[segmentNo]
+	}
+}
+
 type Playground struct {
-	//window *widgets.QMainWindow
-	//canvas *widgets.QWidget
-	spline     bendit.Spline2d
-	scene      *widgets.QGraphicsScene
-	toSegments []*widgets.QGraphicsPathItem
+	spline bendit.Spline2d
+	atts   GraphicsAttachments
 }
 
 /*func (pg *Playground) build(mainWindow *widgets.QMainWindow) {
@@ -47,11 +65,12 @@ func (pg *Playground) buildWthScene(mainWindow *widgets.QMainWindow) {
 	central := widgets.NewQWidget(mainWindow, 0)
 	mainWindow.SetCentralWidget(central)
 
-	pg.scene = widgets.NewQGraphicsScene(central)
-	pg.scene.SetSceneRect2(0, 0, float64(mainWindow.Width()), float64(mainWindow.Height()))
+	scene := widgets.NewQGraphicsScene(central)
+	scene.SetSceneRect2(0, 0, float64(mainWindow.Width()), float64(mainWindow.Height()))
+	pg.atts.Scene = scene
 
 	view := widgets.NewQGraphicsView(central)
-	view.SetScene(pg.scene)
+	view.SetScene(scene)
 
 	layout := widgets.NewQVBoxLayout()
 	layout.AddWidget(view, 0, 0)
@@ -59,7 +78,7 @@ func (pg *Playground) buildWthScene(mainWindow *widgets.QMainWindow) {
 	central.SetLayout(layout)
 
 	pg.buildSpline()
-	pg.addSplineToScene(pg.scene)
+	pg.addSplineToScene()
 }
 
 func (pg *Playground) buildSpline() {
@@ -105,7 +124,7 @@ func (pg *Playground) buildSpline() {
 		cubic.NewBezierVx2(500, 100, cubic.NewControl(490, 150), cubic.NewControl(510, 50)))
 }
 
-func (pg *Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
+func (pg *Playground) addSplineToScene() {
 	// colors
 	black := gui.NewQColor2(core.Qt__black)
 	gray := gui.NewQColor2(core.Qt__gray)
@@ -127,7 +146,7 @@ func (pg *Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
 		ellVertex.SetBrush(brush)
 		ellVertex.ConnectMousePressEvent(veh.HandleMousePressEvent)
 		ellVertex.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
-		scene.AddItem(ellVertex)
+		pg.atts.Scene.AddItem(ellVertex)
 	}
 
 	// bezier-control as solid gray circle
@@ -139,7 +158,7 @@ func (pg *Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
 		ellCtrl.SetBrush(brushCtrl)
 		ellCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
 		ellCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
-		scene.AddItem(ellCtrl)
+		pg.atts.Scene.AddItem(ellCtrl)
 	}
 
 	// vertices
@@ -174,28 +193,8 @@ func (pg *Playground) addSplineToScene(scene *widgets.QGraphicsScene) {
 	pg.spline.Approx(0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.LineCnt())
 	for segmNo, path := range paco.Paths {
-		qPathItem := scene.AddPath(path, pen, gui.NewQBrush())
-		pg.AttachToSegment(segmNo, qPathItem)
-	}
-}
-
-func (pg *Playground) AttachToSegment(segmentNo int, pathItem *widgets.QGraphicsPathItem) (err error) {
-	if !pg.spline.Knots().SegmentExists(segmentNo) {
-		return fmt.Errorf("segment with no. %v doesn't exist", segmentNo)
-	} else {
-		if segmentNo >= len(pg.toSegments) {
-			pg.toSegments = append(pg.toSegments, make([]*widgets.QGraphicsPathItem, segmentNo-len(pg.toSegments)+1)...)
-		}
-		pg.toSegments[segmentNo] = pathItem
-		return nil
-	}
-}
-
-func (pg *Playground) GetFromSegment(segmentNo int) *widgets.QGraphicsPathItem {
-	if !pg.spline.Knots().SegmentExists(segmentNo) || segmentNo >= len(pg.toSegments) {
-		return nil
-	} else {
-		return pg.toSegments[segmentNo]
+		qPathItem := pg.atts.Scene.AddPath(path, pen, gui.NewQBrush())
+		pg.atts.AttachSegment(segmNo, qPathItem)
 	}
 }
 
@@ -297,26 +296,26 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	// TODO redraw spline (at least one segment or two if dependent)
 	if eh.isEntry || (eh.bezier.BezierVertex(eh.knotNo).Dependent() && eh.knotNo > 0) {
 		segmNo := eh.knotNo - 1
-		qPathItem := eh.playground.GetFromSegment(segmNo)
-		eh.playground.scene.RemoveItem(qPathItem)
+		qPathItem := eh.playground.atts.Segment(segmNo)
+		eh.playground.atts.Scene.RemoveItem(qPathItem)
 		paco := NewQPathCollector2d()
 		eh.playground.spline.ApproxSegments(segmNo, segmNo, 0.5, paco)
 		path := paco.Paths[segmNo]
 		pen := gui.NewQPen3(gui.NewQColor2(core.Qt__black))
-		qPathItem = eh.playground.scene.AddPath(path, pen, gui.NewQBrush())
-		eh.playground.AttachToSegment(segmNo, qPathItem)
+		qPathItem = eh.playground.atts.Scene.AddPath(path, pen, gui.NewQBrush())
+		eh.playground.atts.AttachSegment(segmNo, qPathItem)
 	}
 
 	if !eh.isEntry || (eh.bezier.BezierVertex(eh.knotNo).Dependent() && eh.knotNo < eh.bezier.Knots().Cnt()) {
 		segmNo := eh.knotNo
-		qPathItem := eh.playground.GetFromSegment(segmNo)
-		eh.playground.scene.RemoveItem(qPathItem)
+		qPathItem := eh.playground.atts.Segment(segmNo)
+		eh.playground.atts.Scene.RemoveItem(qPathItem)
 		paco := NewQPathCollector2d()
 		eh.playground.spline.ApproxSegments(segmNo, segmNo, 0.5, paco)
 		path := paco.Paths[segmNo]
 		pen := gui.NewQPen3(gui.NewQColor2(core.Qt__black))
-		qPathItem = eh.playground.scene.AddPath(path, pen, gui.NewQBrush())
-		eh.playground.AttachToSegment(segmNo, qPathItem)
+		qPathItem = eh.playground.atts.Scene.AddPath(path, pen, gui.NewQBrush())
+		eh.playground.atts.AttachSegment(segmNo, qPathItem)
 	}
 
 	/*lastx, lasty := bvx.Coord()
