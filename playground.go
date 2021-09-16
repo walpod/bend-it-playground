@@ -11,10 +11,14 @@ import (
 
 // TODO how to keep in sync with spline
 type GraphicsSceneItems struct {
-	Scene        *widgets.QGraphicsScene
+	scene        *widgets.QGraphicsScene
 	segmentItems []*widgets.QGraphicsPathItem
 	vertexItems  []*widgets.QGraphicsEllipseItem    // per knot-no
 	controlItems [][2]*widgets.QGraphicsEllipseItem // entry and exit per knot-no
+}
+
+func NewGraphicsSceneItems(scene *widgets.QGraphicsScene) *GraphicsSceneItems {
+	return &GraphicsSceneItems{scene: scene}
 }
 
 func (si *GraphicsSceneItems) SetSegmentItem(segmentNo int, path gui.QPainterPath_ITF, pen gui.QPen_ITF, brush gui.QBrush_ITF) {
@@ -25,10 +29,10 @@ func (si *GraphicsSceneItems) SetSegmentItem(segmentNo int, path gui.QPainterPat
 	}
 	// remove old pathItem if exists
 	if si.segmentItems[segmentNo] != nil {
-		si.Scene.RemoveItem(si.segmentItems[segmentNo])
+		si.scene.RemoveItem(si.segmentItems[segmentNo])
 	}
 	// set item
-	pathItem := si.Scene.AddPath(path, pen, brush)
+	pathItem := si.scene.AddPath(path, pen, brush)
 	si.segmentItems[segmentNo] = pathItem
 }
 
@@ -48,11 +52,11 @@ func (si *GraphicsSceneItems) SetVertexItem(knotNo int, vertexItem *widgets.QGra
 	}
 	// remove old vertexItem if exists
 	if si.vertexItems[knotNo] != nil {
-		si.Scene.RemoveItem(si.vertexItems[knotNo])
+		si.scene.RemoveItem(si.vertexItems[knotNo])
 	}
 	// set item
 	si.vertexItems[knotNo] = vertexItem
-	si.Scene.AddItem(vertexItem)
+	si.scene.AddItem(vertexItem)
 }
 
 func (si *GraphicsSceneItems) VertexItem(knotNo int) *widgets.QGraphicsEllipseItem {
@@ -81,11 +85,11 @@ func (si *GraphicsSceneItems) SetControlItem(knotNo int, isEntry bool, controlIt
 	sideNo := si.mapToSideNo(isEntry)
 	// remove old controlItem if exists
 	if si.controlItems[knotNo][sideNo] != nil {
-		si.Scene.RemoveItem(si.controlItems[knotNo][sideNo])
+		si.scene.RemoveItem(si.controlItems[knotNo][sideNo])
 	}
 	// set item
 	si.controlItems[knotNo][sideNo] = controlItem
-	si.Scene.AddItem(controlItem)
+	si.scene.AddItem(controlItem)
 }
 
 func (si *GraphicsSceneItems) ControlItem(knotNo int, isEntry bool) *widgets.QGraphicsEllipseItem {
@@ -101,7 +105,29 @@ type Playground struct {
 	sceneItems GraphicsSceneItems
 }
 
-/*func (pg *Playground) build(mainWindow *widgets.QMainWindow) {
+func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
+	central := widgets.NewQWidget(mainWindow, 0)
+	mainWindow.SetCentralWidget(central)
+
+	scene := widgets.NewQGraphicsScene(central)
+	scene.SetSceneRect2(0, 0, float64(mainWindow.Width()), float64(mainWindow.Height()))
+
+	view := widgets.NewQGraphicsView(central)
+	view.SetScene(scene)
+
+	layout := widgets.NewQVBoxLayout()
+	layout.AddWidget(view, 0, 0)
+
+	central.SetLayout(layout)
+
+	pg := &Playground{}
+	pg.sceneItems = *NewGraphicsSceneItems(scene)
+	pg.buildSpline()
+	pg.addSplineToScene()
+	return pg
+}
+
+/*func (pg *Playground) buildOld(mainWindow *widgets.QMainWindow) {
 	//pg.mainWindow = mainWindow
 
 	//statusbar := widgets.NewQStatusBar(mainWindow)
@@ -126,25 +152,6 @@ type Playground struct {
 		fmt.Printf("mouse event but no info about position (?): %v", *event)
 	})
 }*/
-
-func (pg *Playground) buildWthScene(mainWindow *widgets.QMainWindow) {
-	central := widgets.NewQWidget(mainWindow, 0)
-	mainWindow.SetCentralWidget(central)
-
-	pg.sceneItems.Scene = widgets.NewQGraphicsScene(central)
-	pg.sceneItems.Scene.SetSceneRect2(0, 0, float64(mainWindow.Width()), float64(mainWindow.Height()))
-
-	view := widgets.NewQGraphicsView(central)
-	view.SetScene(pg.sceneItems.Scene)
-
-	layout := widgets.NewQVBoxLayout()
-	layout.AddWidget(view, 0, 0)
-
-	central.SetLayout(layout)
-
-	pg.buildSpline()
-	pg.addSplineToScene()
-}
 
 func (pg *Playground) buildSpline() {
 	// hermite
@@ -206,7 +213,7 @@ func (pg *Playground) addSplineToScene() {
 
 	// vertex as solid black circle
 	addVertexToScene := func(knotNo int, x float64, y float64) {
-		veh := VertexEventHandler{spline: pg.spline, knotNo: knotNo}
+		veh := VertexEventHandler{playground: pg, knotNo: knotNo}
 		circleVx := widgets.NewQGraphicsEllipseItem3(x-radius, y-radius, 2*radius, 2*radius, nil)
 		circleVx.SetBrush(brush)
 		circleVx.ConnectMousePressEvent(veh.HandleMousePressEvent)
@@ -296,8 +303,8 @@ func (pg *Playground) drawSplineBySubdivisionDirect(qp *gui.QPainter) {
 }*/
 
 type VertexEventHandler struct {
-	spline bendit.Spline2d
-	knotNo int
+	playground *Playground
+	knotNo     int
 	//mousePressX, mousePressY float64
 }
 
@@ -308,7 +315,7 @@ func (eh *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsScen
 
 func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	pos := event.Pos()
-	vx := eh.spline.Vertex(eh.knotNo)
+	vx := eh.playground.spline.Vertex(eh.knotNo)
 	knotX, knotY := vx.Coord()
 	fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
 		eh.knotNo, pos.X(), pos.Y(), knotX, knotY)

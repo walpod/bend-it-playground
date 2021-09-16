@@ -13,9 +13,7 @@ func main() {
 	window.SetMinimumSize2(800, 500)
 	window.SetWindowTitle("bend-it playground")
 
-	var playground Playground
-	//playground.build(window)
-	playground.buildWthScene(window)
+	NewPlayground(window)
 
 	window.Show()
 
