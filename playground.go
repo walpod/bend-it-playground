@@ -212,7 +212,7 @@ func (pg *Playground) addSplineToScene() {
 
 	// vertex as solid black circle
 	addVertexToScene := func(knotNo int, x float64, y float64) {
-		veh := VertexEventHandler{playground: pg, knotNo: knotNo}
+		veh := BezierVertexEventHandler{playground: pg, knotNo: knotNo}
 		circleVx := widgets.NewQGraphicsEllipseItem2(pg.vertexRectForCircle(x, y), nil)
 		circleVx.SetBrush(brush)
 		circleVx.ConnectMousePressEvent(veh.HandleMousePressEvent)
@@ -311,25 +311,43 @@ func (pg *Playground) drawSplineBySubdivisionDirect(qp *gui.QPainter) {
 	pg.spline.Approx(0.2, collector)
 }*/
 
-type VertexEventHandler struct {
+type BezierVertexEventHandler struct {
 	playground *Playground
 	knotNo     int
 	//mousePressX, mousePressY float64
 }
 
-func (eh *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsSceneMouseEvent) {
+func (eh *BezierVertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	//eh.mousePressX, eh.mousePressY = event.Pos().X(), event.Pos().Y()
 	//fmt.Printf("mouse-press-event for vertex with knotNo = %v at %v/%v\n", eh.knotNo, eh.mousePressX, eh.mousePressY)
 }
 
-func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
+func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
+	bezierVx := eh.playground.spline.Vertex(eh.knotNo).(*cubic.BezierVx2)
 	pos := event.Pos()
-	vx := eh.playground.spline.Vertex(eh.knotNo)
-	knotX, knotY := vx.Coord()
-	fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
-		eh.knotNo, pos.X(), pos.Y(), knotX, knotY)
+	x, y := pos.X(), pos.Y()
+	xold, yold := bezierVx.Coord()
+	/*fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
+	eh.knotNo, x, y, xold, yold)*/
 
-	// TODO move vertex
+	// modify bezier
+	bezierVx = bezierVx.Move(x-xold, y-yold)
+	eh.playground.spline.(*cubic.BezierSpline2d).SetVertex(eh.knotNo, bezierVx)
+
+	// move vertex and controls
+	circleVx := eh.playground.sceneItems.VertexItem(eh.knotNo)
+	circleVx.SetRect(eh.playground.vertexRectForCircle(x, y))
+	circleEntryCtrl := eh.playground.sceneItems.ControlItem(eh.knotNo, true)
+	if circleEntryCtrl != nil {
+		circleEntryCtrl.SetRect(eh.playground.controlRectForCircle(bezierVx.Entry().X(), bezierVx.Entry().Y()))
+	}
+	circleExitCtrl := eh.playground.sceneItems.ControlItem(eh.knotNo, false)
+	if circleExitCtrl != nil {
+		circleExitCtrl.SetRect(eh.playground.controlRectForCircle(bezierVx.Exit().X(), bezierVx.Exit().Y()))
+	}
+
+	// redraw segment paths
+	eh.playground.addSegmentPaths(eh.knotNo-1, eh.knotNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
 type BezierControlEventHandler struct {
@@ -343,28 +361,16 @@ func (eh *BezierControlEventHandler) HandleMousePressEvent(event *widgets.QGraph
 
 func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	bezierVx := eh.playground.spline.Vertex(eh.knotNo).(*cubic.BezierVx2)
-
 	pos := event.Pos()
 	ctrl := cubic.NewControl(pos.X(), pos.Y())
 
-	// prepare new entry and exit controls
-	var entry, exit *cubic.Control
-	if eh.isEntry {
-		entry = ctrl
-		if !bezierVx.Dependent() {
-			exit = bezierVx.Exit()
-		}
-	} else {
-		exit = ctrl
-		if !bezierVx.Dependent() {
-			entry = bezierVx.Entry()
-		}
-	}
-
 	// modify bezier
-	x, y := bezierVx.Coord()
-	eh.playground.spline.(*cubic.BezierSpline2d).Update(eh.knotNo, x, y, entry, exit) // TODO general spline update?
-	bezierVx = eh.playground.spline.Vertex(eh.knotNo).(*cubic.BezierVx2)              // updated bezier vertex
+	if eh.isEntry {
+		bezierVx = bezierVx.WithEntry(ctrl)
+	} else {
+		bezierVx = bezierVx.WithExit(ctrl)
+	}
+	eh.playground.spline.(*cubic.BezierSpline2d).SetVertex(eh.knotNo, bezierVx)
 
 	// move control circles
 	circleCtrl := eh.playground.sceneItems.ControlItem(eh.knotNo, eh.isEntry)
@@ -377,7 +383,7 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 		}
 	}
 
-	// redraw segment path or both adjacent to vertix if dependent
+	// replace segment paths (on both side of vertex if dependent)
 	var fromSegmentNo, toSegmentNo int
 	if eh.isEntry || (bezierVx.Dependent() && eh.knotNo > 0) {
 		fromSegmentNo = eh.knotNo - 1
