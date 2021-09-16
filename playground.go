@@ -9,30 +9,62 @@ import (
 	"github.com/walpod/bend-it/cubic"
 )
 
-type GraphicsAttachments struct {
-	Scene    *widgets.QGraphicsScene
-	Segments []*widgets.QGraphicsPathItem // TODO how to keep in sync with spline
+// TODO how to keep in sync with spline
+type GraphicsSceneItems struct {
+	Scene        *widgets.QGraphicsScene
+	segmentItems []*widgets.QGraphicsPathItem
+	vertexItems  []*widgets.QGraphicsEllipseItem // per knot-no
 }
 
-func (am *GraphicsAttachments) AttachSegment(segmentNo int, path *widgets.QGraphicsPathItem) {
-	if segmentNo >= len(am.Segments) {
-		newCnt := segmentNo - len(am.Segments) + 1
-		am.Segments = append(am.Segments, make([]*widgets.QGraphicsPathItem, newCnt)...)
+func (si *GraphicsSceneItems) SetSegmentItem(segmentNo int, path gui.QPainterPath_ITF, pen gui.QPen_ITF, brush gui.QBrush_ITF) {
+	// append to slice if necessary
+	if segmentNo >= len(si.segmentItems) {
+		newCnt := segmentNo - len(si.segmentItems) + 1
+		si.segmentItems = append(si.segmentItems, make([]*widgets.QGraphicsPathItem, newCnt)...)
 	}
-	am.Segments[segmentNo] = path
+	// remove old pathItem if exists
+	if si.segmentItems[segmentNo] != nil {
+		si.Scene.RemoveItem(si.segmentItems[segmentNo])
+	}
+	// set item
+	pathItem := si.Scene.AddPath(path, pen, brush)
+	si.segmentItems[segmentNo] = pathItem
 }
 
-func (am *GraphicsAttachments) Segment(segmentNo int) *widgets.QGraphicsPathItem {
-	if segmentNo >= len(am.Segments) {
+func (si *GraphicsSceneItems) SegmentItem(segmentNo int) *widgets.QGraphicsPathItem {
+	if segmentNo >= len(si.segmentItems) {
 		return nil
 	} else {
-		return am.Segments[segmentNo]
+		return si.segmentItems[segmentNo]
+	}
+}
+
+func (si *GraphicsSceneItems) SetVertexItem(knotNo int, vertexItem *widgets.QGraphicsEllipseItem) {
+	// append to slice if necessary
+	if knotNo >= len(si.vertexItems) {
+		newCnt := knotNo - len(si.vertexItems) + 1
+		si.vertexItems = append(si.vertexItems, make([]*widgets.QGraphicsEllipseItem, newCnt)...)
+	}
+	// remove old vertexItem if exists
+	if si.vertexItems[knotNo] != nil {
+		si.Scene.RemoveItem(si.vertexItems[knotNo])
+	}
+	// set item
+	si.vertexItems[knotNo] = vertexItem
+	si.Scene.AddItem(vertexItem)
+}
+
+func (si *GraphicsSceneItems) VertexItem(knotNo int) *widgets.QGraphicsEllipseItem {
+	if knotNo >= len(si.vertexItems) {
+		return nil
+	} else {
+		return si.vertexItems[knotNo]
 	}
 }
 
 type Playground struct {
-	spline bendit.Spline2d
-	atts   GraphicsAttachments
+	spline     bendit.Spline2d
+	sceneItems GraphicsSceneItems
 }
 
 /*func (pg *Playground) build(mainWindow *widgets.QMainWindow) {
@@ -65,12 +97,11 @@ func (pg *Playground) buildWthScene(mainWindow *widgets.QMainWindow) {
 	central := widgets.NewQWidget(mainWindow, 0)
 	mainWindow.SetCentralWidget(central)
 
-	scene := widgets.NewQGraphicsScene(central)
-	scene.SetSceneRect2(0, 0, float64(mainWindow.Width()), float64(mainWindow.Height()))
-	pg.atts.Scene = scene
+	pg.sceneItems.Scene = widgets.NewQGraphicsScene(central)
+	pg.sceneItems.Scene.SetSceneRect2(0, 0, float64(mainWindow.Width()), float64(mainWindow.Height()))
 
 	view := widgets.NewQGraphicsView(central)
-	view.SetScene(scene)
+	view.SetScene(pg.sceneItems.Scene)
 
 	layout := widgets.NewQVBoxLayout()
 	layout.AddWidget(view, 0, 0)
@@ -141,12 +172,13 @@ func (pg *Playground) addSplineToScene() {
 
 	// vertex as solid black circle
 	addVertexToScene := func(knotNo int, x float64, y float64) {
-		ellVertex := widgets.NewQGraphicsEllipseItem3(x-radius, y-radius, 2*radius, 2*radius, nil)
-		veh := VertexEventHandler{spline: pg.spline, knotNo: knotNo, ellVx: ellVertex}
-		ellVertex.SetBrush(brush)
-		ellVertex.ConnectMousePressEvent(veh.HandleMousePressEvent)
-		ellVertex.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
-		pg.atts.Scene.AddItem(ellVertex)
+		veh := VertexEventHandler{spline: pg.spline, knotNo: knotNo}
+		ellipseVi := widgets.NewQGraphicsEllipseItem3(x-radius, y-radius, 2*radius, 2*radius, nil)
+		ellipseVi.SetBrush(brush)
+		ellipseVi.ConnectMousePressEvent(veh.HandleMousePressEvent)
+		ellipseVi.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
+		//pg.sceneItems.Scene.AddItem(ellipseVi)
+		pg.sceneItems.SetVertexItem(knotNo, ellipseVi)
 	}
 
 	// bezier-control as solid gray circle
@@ -158,7 +190,7 @@ func (pg *Playground) addSplineToScene() {
 		ellCtrl.SetBrush(brushCtrl)
 		ellCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
 		ellCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
-		pg.atts.Scene.AddItem(ellCtrl)
+		pg.sceneItems.Scene.AddItem(ellCtrl)
 	}
 
 	// vertices
@@ -193,8 +225,7 @@ func (pg *Playground) addSplineToScene() {
 	pg.spline.Approx(0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.LineCnt())
 	for segmNo, path := range paco.Paths {
-		qPathItem := pg.atts.Scene.AddPath(path, pen, gui.NewQBrush())
-		pg.atts.AttachSegment(segmNo, qPathItem)
+		pg.sceneItems.SetSegmentItem(segmNo, path, pen, gui.NewQBrush())
 	}
 }
 
@@ -235,7 +266,7 @@ func (pg *Playground) drawSplineBySubdivisionDirect(qp *gui.QPainter) {
 type VertexEventHandler struct {
 	spline bendit.Spline2d
 	knotNo int
-	ellVx  *widgets.QGraphicsEllipseItem
+	//ellVx  *widgets.QGraphicsEllipseItem
 	//mousePressX, mousePressY float64
 }
 
@@ -296,26 +327,28 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	// TODO redraw spline (at least one segment or two if dependent)
 	if eh.isEntry || (eh.bezier.BezierVertex(eh.knotNo).Dependent() && eh.knotNo > 0) {
 		segmNo := eh.knotNo - 1
-		qPathItem := eh.playground.atts.Segment(segmNo)
-		eh.playground.atts.Scene.RemoveItem(qPathItem)
+		//qPathItem := eh.playground.sceneItems.SegmentItem(segmNo)
+		//eh.playground.sceneItems.Scene.RemoveItem(qPathItem)
 		paco := NewQPathCollector2d()
 		eh.playground.spline.ApproxSegments(segmNo, segmNo, 0.5, paco)
 		path := paco.Paths[segmNo]
 		pen := gui.NewQPen3(gui.NewQColor2(core.Qt__black))
-		qPathItem = eh.playground.atts.Scene.AddPath(path, pen, gui.NewQBrush())
-		eh.playground.atts.AttachSegment(segmNo, qPathItem)
+		//qPathItem = eh.playground.sceneItems.Scene.AddPath(path, pen, gui.NewQBrush())
+		//eh.playground.sceneItems.SetSegmentItem(segmNo, qPathItem)
+		eh.playground.sceneItems.SetSegmentItem(segmNo, path, pen, gui.NewQBrush())
 	}
 
 	if !eh.isEntry || (eh.bezier.BezierVertex(eh.knotNo).Dependent() && eh.knotNo < eh.bezier.Knots().Cnt()) {
 		segmNo := eh.knotNo
-		qPathItem := eh.playground.atts.Segment(segmNo)
-		eh.playground.atts.Scene.RemoveItem(qPathItem)
+		//qPathItem := eh.playground.sceneItems.SegmentItem(segmNo)
+		//eh.playground.sceneItems.Scene.RemoveItem(qPathItem)
 		paco := NewQPathCollector2d()
 		eh.playground.spline.ApproxSegments(segmNo, segmNo, 0.5, paco)
 		path := paco.Paths[segmNo]
 		pen := gui.NewQPen3(gui.NewQColor2(core.Qt__black))
-		qPathItem = eh.playground.atts.Scene.AddPath(path, pen, gui.NewQBrush())
-		eh.playground.atts.AttachSegment(segmNo, qPathItem)
+		//qPathItem = eh.playground.sceneItems.Scene.AddPath(path, pen, gui.NewQBrush())
+		//eh.playground.sceneItems.SetSegmentItem(segmNo, qPathItem)
+		eh.playground.sceneItems.SetSegmentItem(segmNo, path, pen, gui.NewQBrush())
 	}
 
 	/*lastx, lasty := bvx.Coord()
