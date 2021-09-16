@@ -205,7 +205,6 @@ func (pg *Playground) addSplineToScene() {
 	//pen := gui.NewQPen3(gui.NewQColor3(0, 0, 0, 255))
 	pen := gui.NewQPen3(black)
 	brush := gui.NewQBrush2(core.Qt__SolidPattern)
-	radius := 6.0
 
 	// styles for controls
 	//penCtrl := gui.NewQPen3(gray) //gui.NewQPen2(core.Qt__DotLine)
@@ -214,7 +213,7 @@ func (pg *Playground) addSplineToScene() {
 	// vertex as solid black circle
 	addVertexToScene := func(knotNo int, x float64, y float64) {
 		veh := VertexEventHandler{playground: pg, knotNo: knotNo}
-		circleVx := widgets.NewQGraphicsEllipseItem3(x-radius, y-radius, 2*radius, 2*radius, nil)
+		circleVx := widgets.NewQGraphicsEllipseItem2(pg.vertexRectForCircle(x, y), nil)
 		circleVx.SetBrush(brush)
 		circleVx.ConnectMousePressEvent(veh.HandleMousePressEvent)
 		circleVx.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
@@ -223,8 +222,8 @@ func (pg *Playground) addSplineToScene() {
 
 	// bezier-control as solid gray circle
 	addBezierControlToScene := func(knotNo int, ctrl *cubic.Control, isEntry bool) {
-		evh := BezierControlEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry, radius: radius}
-		circleCtrl := widgets.NewQGraphicsEllipseItem3(ctrl.X()-radius, ctrl.Y()-radius, 2*radius, 2*radius, nil)
+		evh := BezierControlEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
+		circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrl.X(), ctrl.Y()), nil)
 		circleCtrl.SetBrush(brushCtrl)
 		circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
 		circleCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
@@ -257,6 +256,16 @@ func (pg *Playground) addSplineToScene() {
 
 	// line segments
 	pg.addSegmentPaths(0, pg.spline.Knots().SegmentCnt()-1, pen)
+}
+
+func (pg *Playground) vertexRectForCircle(x float64, y float64) *core.QRectF {
+	radius := 6.0
+	return core.NewQRectF4(x-radius, y-radius, 2*radius, 2*radius)
+}
+
+func (pg *Playground) controlRectForCircle(x float64, y float64) *core.QRectF {
+	radius := 5.0
+	return core.NewQRectF4(x-radius, y-radius, 2*radius, 2*radius)
 }
 
 func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen *gui.QPen) {
@@ -327,7 +336,6 @@ type BezierControlEventHandler struct {
 	playground *Playground
 	knotNo     int
 	isEntry    bool
-	radius     float64
 }
 
 func (eh *BezierControlEventHandler) HandleMousePressEvent(event *widgets.QGraphicsSceneMouseEvent) {
@@ -360,12 +368,12 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 
 	// move control circles
 	circleCtrl := eh.playground.sceneItems.ControlItem(eh.knotNo, eh.isEntry)
-	circleCtrl.SetRect2(ctrl.X()-eh.radius, ctrl.Y()-eh.radius, 2*eh.radius, 2*eh.radius)
+	circleCtrl.SetRect(eh.playground.controlRectForCircle(ctrl.X(), ctrl.Y()))
 	if bezierVx.Dependent() {
 		circleCtrl = eh.playground.sceneItems.ControlItem(eh.knotNo, !eh.isEntry)
 		if circleCtrl != nil {
 			otherCtrl := bezierVx.Control(!eh.isEntry)
-			circleCtrl.SetRect2(otherCtrl.X()-eh.radius, otherCtrl.Y()-eh.radius, 2*eh.radius, 2*eh.radius)
+			circleCtrl.SetRect(eh.playground.controlRectForCircle(otherCtrl.X(), otherCtrl.Y()))
 		}
 	}
 
