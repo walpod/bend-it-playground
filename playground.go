@@ -347,7 +347,15 @@ func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	}
 
 	// redraw segment paths
-	eh.playground.addSegmentPaths(eh.knotNo-1, eh.knotNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
+	fromSegmentNo := eh.knotNo - 1
+	if fromSegmentNo < 0 {
+		fromSegmentNo = 0
+	}
+	toSegmentNo := eh.knotNo
+	if toSegmentNo >= eh.playground.spline.Knots().Cnt()-1 {
+		toSegmentNo = eh.playground.spline.Knots().Cnt() - 2
+	}
+	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
 type BezierControlEventHandler struct {
