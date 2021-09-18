@@ -347,7 +347,7 @@ func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	}
 
 	// redraw segment paths
-	fromSegmentNo, toSegmentNo, _ := eh.playground.spline.Knots().AdjacentSegments(eh.knotNo, true, true)
+	fromSegmentNo, toSegmentNo, _ := bendit.AdjacentSegments(eh.playground.spline.Knots(), eh.knotNo, true, true)
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
@@ -385,7 +385,7 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	}
 
 	// replace segment paths (on both side of vertex if dependent)
-	fromSegmentNo, toSegmentNo, _ := eh.playground.spline.Knots().AdjacentSegments(eh.knotNo,
+	fromSegmentNo, toSegmentNo, _ := bendit.AdjacentSegments(eh.playground.spline.Knots(), eh.knotNo,
 		eh.isEntry || bezierVx.Dependent(), !eh.isEntry || bezierVx.Dependent())
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 
