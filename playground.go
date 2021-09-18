@@ -232,7 +232,7 @@ func (pg *Playground) addSplineToScene() {
 
 	// vertices
 	knots := pg.spline.Knots()
-	for i := 0; i < knots.Cnt(); i++ {
+	for i := 0; i < knots.KnotCnt(); i++ {
 		t, _ := knots.Knot(i)
 
 		x, y := pg.spline.At(t)
@@ -246,7 +246,7 @@ func (pg *Playground) addSplineToScene() {
 			if i > 0 {
 				addBezierControlToScene(i, bvx.Entry(), true)
 			}
-			if i < knots.Cnt()-1 {
+			if i < knots.KnotCnt()-1 {
 				addBezierControlToScene(i, bvx.Exit(), false)
 			}
 		default:
@@ -347,14 +347,7 @@ func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	}
 
 	// redraw segment paths
-	fromSegmentNo := eh.knotNo - 1
-	if fromSegmentNo < 0 {
-		fromSegmentNo = 0
-	}
-	toSegmentNo := eh.knotNo
-	if toSegmentNo >= eh.playground.spline.Knots().Cnt()-1 {
-		toSegmentNo = eh.playground.spline.Knots().Cnt() - 2
-	}
+	fromSegmentNo, toSegmentNo, _ := eh.playground.spline.Knots().AdjacentSegments(eh.knotNo, true, true)
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
@@ -392,17 +385,8 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	}
 
 	// replace segment paths (on both side of vertex if dependent)
-	var fromSegmentNo, toSegmentNo int
-	if eh.isEntry || (bezierVx.Dependent() && eh.knotNo > 0) {
-		fromSegmentNo = eh.knotNo - 1
-	} else {
-		fromSegmentNo = eh.knotNo
-	}
-	if !eh.isEntry || (bezierVx.Dependent() && eh.knotNo < eh.playground.spline.Knots().Cnt()-1) {
-		toSegmentNo = eh.knotNo
-	} else {
-		toSegmentNo = eh.knotNo - 1
-	}
+	fromSegmentNo, toSegmentNo, _ := eh.playground.spline.Knots().AdjacentSegments(eh.knotNo,
+		eh.isEntry || bezierVx.Dependent(), !eh.isEntry || bezierVx.Dependent())
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 
 	/*lastx, lasty := bezierVx.Coord()
