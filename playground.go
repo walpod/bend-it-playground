@@ -240,6 +240,7 @@ func (pg *Playground) addSplineToScene() {
 		circleVx.SetBrush(pg.brush)
 		circleVx.ConnectMousePressEvent(veh.HandleMousePressEvent)
 		circleVx.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
+		//circleVx.ConnectMouseDoubleClickEvent(veh.HandleMouseDoubleClickEvent)
 		pg.sceneItems.SetVertexCircle(knotNo, circleVx)
 	}
 
@@ -358,7 +359,7 @@ func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 
 	// modify bezier
 	bezierVx = bezierVx.Move(x-xold, y-yold)
-	eh.playground.spline.(*cubic.BezierSpline2d).SetVertex(eh.knotNo, bezierVx)
+	eh.playground.spline.(*cubic.BezierSpline2d).UpdateVertex(eh.knotNo, bezierVx)
 
 	// move vertex
 	circleVx := eh.playground.sceneItems.VertexCircle(eh.knotNo)
@@ -382,6 +383,17 @@ func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
+/*func (eh *BezierVertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphicsSceneMouseEvent) {
+	//bezierVx := eh.playground.spline.Vertex(eh.knotNo).(*cubic.BezierVx2)
+	pos := event.Pos()
+	x, y := pos.X(), pos.Y()
+	fmt.Printf("mouse-double-click-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
+		eh.knotNo, x, y)
+	newBezierVx := cubic.NewBezierVx2(x+10, y+10, cubic.NewControl(x, y), cubic.NewControl(x+20, x+20))
+	bezier := eh.playground.spline.(*cubic.BezierSpline2d)
+	bezier.AddVertex(eh.knotNo + 1, newBezierVx)
+}*/
+
 type BezierControlEventHandler struct {
 	playground *Playground
 	knotNo     int
@@ -402,7 +414,7 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	} else {
 		bezierVx = bezierVx.WithExit(ctrl)
 	}
-	eh.playground.spline.(*cubic.BezierSpline2d).SetVertex(eh.knotNo, bezierVx)
+	eh.playground.spline.(*cubic.BezierSpline2d).UpdateVertex(eh.knotNo, bezierVx)
 
 	// move control
 	ctrlCircle := eh.playground.sceneItems.ControlCircle(eh.knotNo, eh.isEntry)
