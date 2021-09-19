@@ -11,59 +11,52 @@ import (
 
 // TODO how to keep in sync with spline
 type GraphicsSceneItems struct {
-	scene        *widgets.QGraphicsScene
-	segmentItems []*widgets.QGraphicsPathItem
-	vertexItems  []*widgets.QGraphicsEllipseItem    // per knot-no
-	controlItems [][2]*widgets.QGraphicsEllipseItem // entry and exit per knot-no
+	scene          *widgets.QGraphicsScene
+	segmentPaths   []*widgets.QGraphicsPathItem
+	vertexCircles  []*widgets.QGraphicsEllipseItem    // per knot-no
+	controlCircles [][2]*widgets.QGraphicsEllipseItem // entry and exit per knot-no
+	controlLines   [][2]*widgets.QGraphicsLineItem    // entry and exit per knot-no
 }
 
 func NewGraphicsSceneItems(scene *widgets.QGraphicsScene) *GraphicsSceneItems {
 	return &GraphicsSceneItems{scene: scene}
 }
 
-func (si *GraphicsSceneItems) SetSegmentItem(segmentNo int, path gui.QPainterPath_ITF, pen gui.QPen_ITF, brush gui.QBrush_ITF) {
+func (si *GraphicsSceneItems) SetSegmentPath(segmentNo int, path gui.QPainterPath_ITF, pen gui.QPen_ITF, brush gui.QBrush_ITF) {
 	// append to slice if necessary
-	if segmentNo >= len(si.segmentItems) {
-		newCnt := segmentNo - len(si.segmentItems) + 1
-		si.segmentItems = append(si.segmentItems, make([]*widgets.QGraphicsPathItem, newCnt)...)
+	if segmentNo >= len(si.segmentPaths) {
+		newCnt := segmentNo - len(si.segmentPaths) + 1
+		si.segmentPaths = append(si.segmentPaths, make([]*widgets.QGraphicsPathItem, newCnt)...)
 	}
 	// remove old pathItem if exists
-	if si.segmentItems[segmentNo] != nil {
-		si.scene.RemoveItem(si.segmentItems[segmentNo])
+	if si.segmentPaths[segmentNo] != nil {
+		si.scene.RemoveItem(si.segmentPaths[segmentNo])
 	}
 	// set item
 	pathItem := si.scene.AddPath(path, pen, brush)
-	si.segmentItems[segmentNo] = pathItem
+	si.segmentPaths[segmentNo] = pathItem
 }
 
-func (si *GraphicsSceneItems) SegmentItem(segmentNo int) *widgets.QGraphicsPathItem {
-	if segmentNo >= len(si.segmentItems) {
-		return nil
-	} else {
-		return si.segmentItems[segmentNo]
-	}
-}
-
-func (si *GraphicsSceneItems) SetVertexItem(knotNo int, vertexItem *widgets.QGraphicsEllipseItem) {
+func (si *GraphicsSceneItems) SetVertexCircle(knotNo int, circle *widgets.QGraphicsEllipseItem) {
 	// append to slice if necessary
-	if knotNo >= len(si.vertexItems) {
-		newCnt := knotNo - len(si.vertexItems) + 1
-		si.vertexItems = append(si.vertexItems, make([]*widgets.QGraphicsEllipseItem, newCnt)...)
+	if knotNo >= len(si.vertexCircles) {
+		newCnt := knotNo - len(si.vertexCircles) + 1
+		si.vertexCircles = append(si.vertexCircles, make([]*widgets.QGraphicsEllipseItem, newCnt)...)
 	}
-	// remove old vertexItem if exists
-	if si.vertexItems[knotNo] != nil {
-		si.scene.RemoveItem(si.vertexItems[knotNo])
+	// remove old circle if exists
+	if si.vertexCircles[knotNo] != nil {
+		si.scene.RemoveItem(si.vertexCircles[knotNo])
 	}
 	// set item
-	si.vertexItems[knotNo] = vertexItem
-	si.scene.AddItem(vertexItem)
+	si.vertexCircles[knotNo] = circle
+	si.scene.AddItem(circle)
 }
 
-func (si *GraphicsSceneItems) VertexItem(knotNo int) *widgets.QGraphicsEllipseItem {
-	if knotNo >= len(si.vertexItems) {
+func (si *GraphicsSceneItems) VertexCircle(knotNo int) *widgets.QGraphicsEllipseItem {
+	if knotNo >= len(si.vertexCircles) {
 		return nil
 	} else {
-		return si.vertexItems[knotNo]
+		return si.vertexCircles[knotNo]
 	}
 }
 
@@ -76,29 +69,53 @@ func (si *GraphicsSceneItems) mapToSideNo(isEntry bool) int {
 	}
 }
 
-func (si *GraphicsSceneItems) SetControlItem(knotNo int, isEntry bool, controlItem *widgets.QGraphicsEllipseItem) {
+func (si *GraphicsSceneItems) SetControlCircle(knotNo int, isEntry bool, circle *widgets.QGraphicsEllipseItem) {
 	// append to slice if necessary
-	if knotNo >= len(si.controlItems) {
-		newCnt := knotNo - len(si.controlItems) + 1
-		si.controlItems = append(si.controlItems, make([][2]*widgets.QGraphicsEllipseItem, newCnt)...)
+	if knotNo >= len(si.controlCircles) {
+		newCnt := knotNo - len(si.controlCircles) + 1
+		si.controlCircles = append(si.controlCircles, make([][2]*widgets.QGraphicsEllipseItem, newCnt)...)
 	}
 	sideNo := si.mapToSideNo(isEntry)
-	// remove old controlItem if exists
-	if si.controlItems[knotNo][sideNo] != nil {
-		si.scene.RemoveItem(si.controlItems[knotNo][sideNo])
+	// remove old circle if exists
+	if si.controlCircles[knotNo][sideNo] != nil {
+		si.scene.RemoveItem(si.controlCircles[knotNo][sideNo])
 	}
 	// set item
-	si.controlItems[knotNo][sideNo] = controlItem
-	si.scene.AddItem(controlItem)
+	si.controlCircles[knotNo][sideNo] = circle
+	si.scene.AddItem(circle)
 }
 
-func (si *GraphicsSceneItems) ControlItem(knotNo int, isEntry bool) *widgets.QGraphicsEllipseItem {
-	if knotNo >= len(si.controlItems) {
+func (si *GraphicsSceneItems) ControlCircle(knotNo int, isEntry bool) *widgets.QGraphicsEllipseItem {
+	if knotNo >= len(si.controlCircles) {
 		return nil
 	} else {
-		return si.controlItems[knotNo][si.mapToSideNo(isEntry)]
+		return si.controlCircles[knotNo][si.mapToSideNo(isEntry)]
 	}
 }
+
+func (si *GraphicsSceneItems) SetControlLine(knotNo int, isEntry bool, line *widgets.QGraphicsLineItem) {
+	// append to slice if necessary
+	if knotNo >= len(si.controlLines) {
+		newCnt := knotNo - len(si.controlLines) + 1
+		si.controlLines = append(si.controlLines, make([][2]*widgets.QGraphicsLineItem, newCnt)...)
+	}
+	sideNo := si.mapToSideNo(isEntry)
+	// remove old line if exists
+	if si.controlLines[knotNo][sideNo] != nil {
+		si.scene.RemoveItem(si.controlLines[knotNo][sideNo])
+	}
+	// set item
+	si.controlLines[knotNo][sideNo] = line
+	si.scene.AddItem(line)
+}
+
+/*func (si *GraphicsSceneItems) ControlLine(knotNo int, isEntry bool) *widgets.QGraphicsLineItem {
+	if knotNo >= len(si.controlLines) {
+		return nil
+	} else {
+		return si.controlLines[knotNo][si.mapToSideNo(isEntry)]
+	}
+}*/
 
 type Playground struct {
 	spline     bendit.Spline2d
@@ -217,17 +234,21 @@ func (pg *Playground) addSplineToScene() {
 		circleVx.SetBrush(brush)
 		circleVx.ConnectMousePressEvent(veh.HandleMousePressEvent)
 		circleVx.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
-		pg.sceneItems.SetVertexItem(knotNo, circleVx)
+		pg.sceneItems.SetVertexCircle(knotNo, circleVx)
 	}
 
 	// bezier-control as solid gray circle
-	addBezierControlToScene := func(knotNo int, ctrl *cubic.Control, isEntry bool) {
+	addBezierControlToScene := func(knotNo int, vertex *cubic.BezierVx2, ctrl *cubic.Control, isEntry bool) {
 		evh := BezierControlEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
-		circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrl.X(), ctrl.Y()), nil)
+		ctrlx, ctrly := ctrl.X(), ctrl.Y()
+		circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrlx, ctrly), nil)
 		circleCtrl.SetBrush(brushCtrl)
 		circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
 		circleCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
-		pg.sceneItems.SetControlItem(knotNo, isEntry, circleCtrl)
+		pg.sceneItems.SetControlCircle(knotNo, isEntry, circleCtrl)
+		vtx, vty := vertex.Coord()
+		line := widgets.NewQGraphicsLineItem3(vtx, vty, ctrlx, ctrly, nil)
+		pg.sceneItems.SetControlLine(knotNo, isEntry, line)
 	}
 
 	// vertices
@@ -244,10 +265,10 @@ func (pg *Playground) addSplineToScene() {
 			// bezier control points
 			bvx, _ := spl.Vertex(i).(*cubic.BezierVx2)
 			if i > 0 {
-				addBezierControlToScene(i, bvx.Entry(), true)
+				addBezierControlToScene(i, bvx, bvx.Entry(), true)
 			}
 			if i < knots.KnotCnt()-1 {
-				addBezierControlToScene(i, bvx.Exit(), false)
+				addBezierControlToScene(i, bvx, bvx.Exit(), false)
 			}
 		default:
 			panic(fmt.Sprintf("type not yet supported: %T", spl))
@@ -273,7 +294,7 @@ func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen *g
 	pg.spline.Approx(fromSegmentNo, toSegmentNo, 0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.LineCnt())
 	for segmNo := fromSegmentNo; segmNo <= toSegmentNo; segmNo++ {
-		pg.sceneItems.SetSegmentItem(segmNo, paco.Paths[segmNo], pen, gui.NewQBrush())
+		pg.sceneItems.SetSegmentPath(segmNo, paco.Paths[segmNo], pen, gui.NewQBrush())
 	}
 }
 
@@ -334,16 +355,23 @@ func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	bezierVx = bezierVx.Move(x-xold, y-yold)
 	eh.playground.spline.(*cubic.BezierSpline2d).SetVertex(eh.knotNo, bezierVx)
 
-	// move vertex and controls
-	circleVx := eh.playground.sceneItems.VertexItem(eh.knotNo)
+	// move vertex
+	circleVx := eh.playground.sceneItems.VertexCircle(eh.knotNo)
 	circleVx.SetRect(eh.playground.vertexRectForCircle(x, y))
-	circleEntryCtrl := eh.playground.sceneItems.ControlItem(eh.knotNo, true)
-	if circleEntryCtrl != nil {
-		circleEntryCtrl.SetRect(eh.playground.controlRectForCircle(bezierVx.Entry().X(), bezierVx.Entry().Y()))
+
+	// move controls
+	circleEntry := eh.playground.sceneItems.ControlCircle(eh.knotNo, true)
+	if circleEntry != nil {
+		circleEntry.SetRect(eh.playground.controlRectForCircle(bezierVx.Entry().X(), bezierVx.Entry().Y()))
+		line := widgets.NewQGraphicsLineItem3(x, y, bezierVx.Entry().X(), bezierVx.Entry().Y(), nil)
+		eh.playground.sceneItems.SetControlLine(eh.knotNo, true, line)
 	}
-	circleExitCtrl := eh.playground.sceneItems.ControlItem(eh.knotNo, false)
-	if circleExitCtrl != nil {
-		circleExitCtrl.SetRect(eh.playground.controlRectForCircle(bezierVx.Exit().X(), bezierVx.Exit().Y()))
+
+	circleExit := eh.playground.sceneItems.ControlCircle(eh.knotNo, false)
+	if circleExit != nil {
+		circleExit.SetRect(eh.playground.controlRectForCircle(bezierVx.Exit().X(), bezierVx.Exit().Y()))
+		line := widgets.NewQGraphicsLineItem3(x, y, bezierVx.Exit().X(), bezierVx.Exit().Y(), nil)
+		eh.playground.sceneItems.SetControlLine(eh.knotNo, false, line)
 	}
 
 	// redraw segment paths
@@ -373,14 +401,20 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	}
 	eh.playground.spline.(*cubic.BezierSpline2d).SetVertex(eh.knotNo, bezierVx)
 
-	// move control circles
-	circleCtrl := eh.playground.sceneItems.ControlItem(eh.knotNo, eh.isEntry)
-	circleCtrl.SetRect(eh.playground.controlRectForCircle(ctrl.X(), ctrl.Y()))
+	// move control
+	ctrlCircle := eh.playground.sceneItems.ControlCircle(eh.knotNo, eh.isEntry)
+	ctrlCircle.SetRect(eh.playground.controlRectForCircle(ctrl.X(), ctrl.Y()))
+	x, y := bezierVx.Coord()
+	line := widgets.NewQGraphicsLineItem3(x, y, ctrl.X(), ctrl.Y(), nil)
+	eh.playground.sceneItems.SetControlLine(eh.knotNo, eh.isEntry, line)
+
 	if bezierVx.Dependent() {
-		circleCtrl = eh.playground.sceneItems.ControlItem(eh.knotNo, !eh.isEntry)
-		if circleCtrl != nil {
+		ctrlCircle = eh.playground.sceneItems.ControlCircle(eh.knotNo, !eh.isEntry)
+		if ctrlCircle != nil {
 			otherCtrl := bezierVx.Control(!eh.isEntry)
-			circleCtrl.SetRect(eh.playground.controlRectForCircle(otherCtrl.X(), otherCtrl.Y()))
+			ctrlCircle.SetRect(eh.playground.controlRectForCircle(otherCtrl.X(), otherCtrl.Y()))
+			line := widgets.NewQGraphicsLineItem3(x, y, otherCtrl.X(), otherCtrl.Y(), nil)
+			eh.playground.sceneItems.SetControlLine(eh.knotNo, !eh.isEntry, line)
 		}
 	}
 
@@ -388,10 +422,6 @@ func (eh *BezierControlEventHandler) HandleMouseReleaseEvent(event *widgets.QGra
 	fromSegmentNo, toSegmentNo, _ := bendit.AdjacentSegments(eh.playground.spline.Knots(), eh.knotNo,
 		eh.isEntry || bezierVx.Dependent(), !eh.isEntry || bezierVx.Dependent())
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
-
-	/*lastx, lasty := bezierVx.Coord()
-	fmt.Printf("mouse-released-event for vertex with knotNo = %vx at %vx/%vx, for knot previously at %vx/%vx\n",
-		eh.knotNo, pos.X(), pos.Y(), lastx, lasty)*/
 }
 
 /*func (pg *Playground) drawSplineBySubdivisionPath(qp *gui.QPainter) {
