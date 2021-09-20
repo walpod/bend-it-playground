@@ -113,6 +113,29 @@ func (si *GraphicsSceneItems) SetControlLine(knotNo int, isEntry bool, fromx, fr
 	return lineItem
 }
 
+/*func (si *GraphicsSceneItems) ResetVertex(knotNo int) {
+	si.scene.RemoveItem(si.vertexCircles[knotNo])
+	si.vertexCircles[knotNo] = nil
+	si.scene.RemoveItem(si.controlCircles[knotNo][0])
+	si.controlCircles[knotNo][0] = nil
+	si.scene.RemoveItem(si.controlLines[knotNo][0])
+	si.controlLines[knotNo][0] = nil
+	si.scene.RemoveItem(si.controlCircles[knotNo][1])
+	si.controlCircles[knotNo][1] = nil
+	si.scene.RemoveItem(si.controlLines[knotNo][1])
+	si.controlLines[knotNo][1] = nil
+	prevSegmNo := knotNo - 1
+	if prevSegmNo >= 0 && prevSegmNo < len(si.segmentPaths) {
+		si.scene.RemoveItem(si.segmentPaths[prevSegmNo])
+		si.segmentPaths[prevSegmNo] = nil
+	}
+	nextSegmNo := knotNo
+	if nextSegmNo >= 0 && nextSegmNo < len(si.segmentPaths) {
+		si.scene.RemoveItem(si.segmentPaths[nextSegmNo])
+		si.segmentPaths[nextSegmNo] = nil
+	}
+}*/
+
 /*func (si *GraphicsSceneItems) ControlLine(knotNo int, isEntry bool) *widgets.QGraphicsLineItem {
 	if knotNo >= len(si.controlLines) {
 		return nil
@@ -232,67 +255,38 @@ func (pg *Playground) buildSpline() {
 	//cubic.NewBezierVx2(500, 100, cubic.NewControl(490, 150), cubic.NewControl(510, 50)))
 }
 
-func (pg *Playground) addSplineToScene() {
-	// vertex as solid black circle
-	addVertexToScene := func(knotNo int, x float64, y float64) {
-		veh := BezierVertexEventHandler{playground: pg, knotNo: knotNo}
-		circleVx := widgets.NewQGraphicsEllipseItem2(pg.vertexRectForCircle(x, y), nil)
-		circleVx.SetBrush(pg.brush)
-		circleVx.ConnectMousePressEvent(veh.HandleMousePressEvent)
-		circleVx.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
-		//circleVx.ConnectMouseDoubleClickEvent(veh.HandleMouseDoubleClickEvent)
-		pg.sceneItems.SetVertexCircle(knotNo, circleVx)
-	}
-
-	// bezier-control as solid gray circle
-	addBezierControlToScene := func(knotNo int, vertex *cubic.BezierVx2, ctrl *cubic.Control, isEntry bool) {
-		evh := BezierControlEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
-		ctrlx, ctrly := ctrl.X(), ctrl.Y()
-		circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrlx, ctrly), nil)
-		circleCtrl.SetBrush(pg.brushCtrl)
-		circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
-		circleCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
-		pg.sceneItems.SetControlCircle(knotNo, isEntry, circleCtrl)
-		vtx, vty := vertex.Coord()
-		pg.sceneItems.SetControlLine(knotNo, isEntry, vtx, vty, ctrlx, ctrly, pg.penCtrl)
-	}
-
-	// vertices
-	knots := pg.spline.Knots()
-	for i := 0; i < knots.KnotCnt(); i++ {
-		t, _ := knots.Knot(i)
-
-		x, y := pg.spline.At(t)
-		addVertexToScene(i, x, y)
-
-		// controls
-		switch spl := pg.spline.(type) {
-		case *cubic.BezierSpline2d:
-			// bezier control points
-			bvx, _ := spl.Vertex(i).(*cubic.BezierVx2)
-			if i > 0 {
-				addBezierControlToScene(i, bvx, bvx.Entry(), true)
-			}
-			if i < knots.KnotCnt()-1 {
-				addBezierControlToScene(i, bvx, bvx.Exit(), false)
-			}
-		default:
-			panic(fmt.Sprintf("type not yet supported: %T", spl))
-		}
-	}
-
-	// line segments
-	pg.addSegmentPaths(0, pg.spline.Knots().SegmentCnt()-1, pg.pen)
-}
-
 func (pg *Playground) vertexRectForCircle(x float64, y float64) *core.QRectF {
 	radius := 6.0
 	return core.NewQRectF4(x-radius, y-radius, 2*radius, 2*radius)
 }
 
+func (pg *Playground) addVertexToScene(knotNo int, x float64, y float64) {
+	veh := BezierVertexEventHandler{playground: pg, knotNo: knotNo}
+	// vertex as solid black circle
+	circleVx := widgets.NewQGraphicsEllipseItem2(pg.vertexRectForCircle(x, y), nil)
+	circleVx.SetBrush(pg.brush)
+	circleVx.ConnectMousePressEvent(veh.HandleMousePressEvent)
+	circleVx.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
+	circleVx.ConnectMouseDoubleClickEvent(veh.HandleMouseDoubleClickEvent)
+	pg.sceneItems.SetVertexCircle(knotNo, circleVx)
+}
+
 func (pg *Playground) controlRectForCircle(x float64, y float64) *core.QRectF {
 	radius := 5.0
 	return core.NewQRectF4(x-radius, y-radius, 2*radius, 2*radius)
+}
+
+func (pg *Playground) addBezierControlToScene(knotNo int, vertex *cubic.BezierVx2, ctrl *cubic.Control, isEntry bool) {
+	evh := BezierControlEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
+	// bezier-control as solid gray circle
+	ctrlx, ctrly := ctrl.X(), ctrl.Y()
+	circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrlx, ctrly), nil)
+	circleCtrl.SetBrush(pg.brushCtrl)
+	circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
+	circleCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
+	pg.sceneItems.SetControlCircle(knotNo, isEntry, circleCtrl)
+	vtx, vty := vertex.Coord()
+	pg.sceneItems.SetControlLine(knotNo, isEntry, vtx, vty, ctrlx, ctrly, pg.penCtrl)
 }
 
 func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen gui.QPen_ITF) {
@@ -304,39 +298,32 @@ func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen gu
 	}
 }
 
-/*func (pg *Playground) paint(canvas *widgets.QWidget) {
-	qp := gui.NewQPainter2(canvas)
+func (pg *Playground) addSplineToScene() {
+	// bezier-control as solid gray circle
 
-	// draw spline
-	//pg.drawSplineByIteration(qp)
-	//pg.drawSplineBySubdivisionDirect(qp)
-	//pg.drawSplineBySubdivisionPath(qp)
-
-	//pg.drawTest(qp)
-
-	qp.DestroyQPainter()
-}
-
-func (pg *Playground) drawSplineByIteration(qp *gui.QPainter) {
+	// vertices
 	knots := pg.spline.Knots()
-	tend := knots.Tend()
-	stepSize := tend / 100
-	for t := knots.Tstart(); t < tend; t += stepSize {
-		x, y := pg.spline.At(t)
-		qp.DrawPoint3(int(math.Round(x)), int(math.Round(y)))
-	}
-}
+	for i := 0; i < knots.KnotCnt(); i++ {
+		t, _ := knots.Knot(i)
 
-func (pg *Playground) drawSplineBySubdivisionDirect(qp *gui.QPainter) {
-	// draw spline
-	lineSegNo := 0
-	collector := bendit.NewDirectCollector2d(func(segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64) {
-		fmt.Printf("%v-th line(%v, %v, %v, %v)\n", lineSegNo, pstartx, pstarty, pendx, pendy)
-		lineSegNo++
-		qp.DrawLine3(int(math.Round(pstartx)), int(math.Round(pstarty)), int(math.Round(pendx)), int(math.Round(pendy)))
-	})
-	pg.spline.Approx(0.2, collector)
-}*/
+		x, y := pg.spline.At(t)
+		pg.addVertexToScene(i, x, y)
+
+		// controls
+		switch spl := pg.spline.(type) {
+		case *cubic.BezierSpline2d:
+			// bezier control points
+			bvx, _ := spl.Vertex(i).(*cubic.BezierVx2)
+			pg.addBezierControlToScene(i, bvx, bvx.Entry(), true)
+			pg.addBezierControlToScene(i, bvx, bvx.Exit(), false)
+		default:
+			panic(fmt.Sprintf("type not yet supported: %T", spl))
+		}
+	}
+
+	// line segments
+	pg.addSegmentPaths(0, pg.spline.Knots().SegmentCnt()-1, pg.pen)
+}
 
 type BezierVertexEventHandler struct {
 	playground *Playground
@@ -383,16 +370,26 @@ func (eh *BezierVertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
-/*func (eh *BezierVertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphicsSceneMouseEvent) {
+// incomplete: for simplicity reasons only add by double-click on the last vertex and delete by double-click on the first
+func (eh *BezierVertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	//bezierVx := eh.playground.spline.Vertex(eh.knotNo).(*cubic.BezierVx2)
 	pos := event.Pos()
 	x, y := pos.X(), pos.Y()
 	fmt.Printf("mouse-double-click-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
 		eh.knotNo, x, y)
-	newBezierVx := cubic.NewBezierVx2(x+10, y+10, cubic.NewControl(x, y), cubic.NewControl(x+20, x+20))
+
 	bezier := eh.playground.spline.(*cubic.BezierSpline2d)
-	bezier.AddVertex(eh.knotNo + 1, newBezierVx)
-}*/
+	if eh.knotNo == eh.playground.spline.Knots().KnotCnt()-1 {
+		// double-click on last vertex => add new one
+		newBezierVx := cubic.NewBezierVx2(x+30, y+30, cubic.NewControl(x-20, y-20), nil)
+		newKnotNo := eh.knotNo + 1
+		bezier.AddVertex(newKnotNo, newBezierVx)
+		x, y = newBezierVx.Coord()
+		eh.playground.addVertexToScene(newKnotNo, x, y)
+		eh.playground.addBezierControlToScene(newKnotNo, newBezierVx, newBezierVx.Entry(), true)
+		eh.playground.addBezierControlToScene(newKnotNo, newBezierVx, newBezierVx.Exit(), false)
+	}
+}
 
 type BezierControlEventHandler struct {
 	playground *Playground
