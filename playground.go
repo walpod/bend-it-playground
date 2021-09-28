@@ -276,7 +276,7 @@ func (pg *Playground) controlRectForCircle(x float64, y float64) *core.QRectF {
 
 func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex2d, ctrlx, ctrly float64, isEntry bool) {
 	evh := ControlPointEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
-	// bezier-control as solid gray circle
+	// control as solid gray circle
 	circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrlx, ctrly), nil)
 	circleCtrl.SetBrush(pg.brushCtrl)
 	circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
@@ -388,14 +388,26 @@ func (eh *VertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphi
 
 	if eh.knotNo == eh.playground.spline.Knots().KnotCnt()-1 {
 		// double-click on last vertex => add new one
-		// TODO support HermiteVx2 also
-		newBezierVx := cubic.NewBezierVx2(x+30, y+30, cubic.NewControl(x-20, y-20), nil)
+		var newVertex bendit.Vertex2d
+		vtx, vty := x+30, y+30
+		var ctrlx, ctrly, exctrlx, exctrly float64
+		switch eh.playground.spline.(type) {
+		case *cubic.BezierSpline2d:
+			ctrlx, ctrly = x-20, y-20
+			bezier := cubic.NewBezierVx2(vtx, vty, cubic.NewControl(ctrlx, ctrly), nil)
+			exctrlx, exctrly = bezier.Exit().X(), bezier.Exit().Y()
+			newVertex = bezier
+		case *cubic.HermiteSpline2d, *cubic.NaturalHermiteSpline2d:
+			hermite := cubic.NewHermiteVx2(vtx, vty, cubic.NewControl(30, 80), nil)
+			ctrlx, ctrly = vtx-hermite.EntryTan().X(), vty-hermite.EntryTan().Y()
+			exctrlx, exctrly = vtx+hermite.ExitTan().X(), vty+hermite.ExitTan().Y()
+			newVertex = hermite
+		}
 		newKnotNo := eh.knotNo + 1
-		eh.playground.spline.AddVertex(newKnotNo, newBezierVx)
-		x, y = newBezierVx.Coord()
-		eh.playground.addVertexToScene(newKnotNo, x, y)
-		eh.playground.addControlPointToScene(newKnotNo, newBezierVx, newBezierVx.Entry().X(), newBezierVx.Entry().Y(), true)
-		eh.playground.addControlPointToScene(newKnotNo, newBezierVx, newBezierVx.Entry().X(), newBezierVx.Entry().Y(), false)
+		eh.playground.spline.AddVertex(newKnotNo, newVertex)
+		eh.playground.addVertexToScene(newKnotNo, vtx, vty)
+		eh.playground.addControlPointToScene(newKnotNo, newVertex, ctrlx, ctrly, true)
+		eh.playground.addControlPointToScene(newKnotNo, newVertex, exctrlx, exctrly, false)
 	}
 }
 

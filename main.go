@@ -10,7 +10,7 @@ func main() {
 	app := widgets.NewQApplication(len(os.Args), os.Args)
 
 	window := widgets.NewQMainWindow(nil, 0)
-	window.SetMinimumSize2(800, 500)
+	window.SetMinimumSize2(1300, 800)
 	window.SetWindowTitle("bend-it playground")
 
 	NewPlayground(window)
