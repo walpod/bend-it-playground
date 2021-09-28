@@ -9,7 +9,6 @@ import (
 	"github.com/walpod/bend-it/cubic"
 )
 
-// TODO how to keep in sync with spline
 type GraphicsSceneItems struct {
 	scene          *widgets.QGraphicsScene
 	segmentPaths   []*widgets.QGraphicsPathItem
@@ -299,11 +298,9 @@ func (pg *Playground) addSplineToScene() {
 	// bezier-control as solid gray circle
 
 	// vertices
-	knots := pg.spline.Knots()
-	for i := 0; i < knots.KnotCnt(); i++ {
-		t, _ := knots.Knot(i)
-
-		x, y := pg.spline.At(t)
+	vertices := bendit.Vertices(pg.spline)
+	for i := 0; i < len(vertices); i++ {
+		x, y := vertices[i].Coord()
 		pg.addVertexToScene(i, x, y)
 
 		// controls
