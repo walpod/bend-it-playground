@@ -95,7 +95,7 @@ func (si *GraphicsSceneItems) ControlCircle(knotNo int, isEntry bool) *widgets.Q
 	}
 }
 
-func (si *GraphicsSceneItems) SetControlLine(knotNo int, isEntry bool, fromx, fromy, tox, toy float64, pen gui.QPen_ITF) *widgets.QGraphicsLineItem {
+func (si *GraphicsSceneItems) SetControlLine(knotNo int, isEntry bool, from, to bendit.Vec, pen gui.QPen_ITF) *widgets.QGraphicsLineItem {
 	// append to slice if necessary
 	if knotNo >= len(si.controlLines) {
 		newCnt := knotNo - len(si.controlLines) + 1
@@ -107,7 +107,7 @@ func (si *GraphicsSceneItems) SetControlLine(knotNo int, isEntry bool, fromx, fr
 		si.scene.RemoveItem(si.controlLines[knotNo][sideNo])
 	}
 	// set line
-	lineItem := si.scene.AddLine2(fromx, fromy, tox, toy, pen)
+	lineItem := si.scene.AddLine2(from[0], from[1], to[0], to[1], pen)
 	si.controlLines[knotNo][sideNo] = lineItem
 	return lineItem
 }
@@ -213,43 +213,43 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 
 func (pg *Playground) buildSpline() {
 	// hermite
-	/*pg.spline = cubic.NewHermiteSpline2d(nil,
-		cubic.NewHermiteVx2(200, 200, nil, cubic.NewControl(90, 90)),
-		cubic.NewHermiteVx2(350, 350, cubic.NewControl(200, 0), nil),
-		cubic.NewHermiteVx2(500, 200, cubic.NewControl(100, -100), nil),
-	)*/
+	pg.spline = cubic.NewHermiteSpline2d(nil,
+		cubic.NewHermiteVx2(bendit.NewVec(200, 200), nil, bendit.NewVec(90, 90)),
+		cubic.NewHermiteVx2(bendit.NewVec(350, 350), bendit.NewVec(200, 0), nil),
+		cubic.NewHermiteVx2(bendit.NewVec(500, 200), bendit.NewVec(100, -100), nil),
+	)
 
-	/*pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
-		cubic.NewHermiteVx2Raw(10, 10),
-		cubic.NewHermiteVx2Raw(100, 100),
-		cubic.NewHermiteVx2Raw(150, 10),
-	)*/
+	pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
+		cubic.NewHermiteVx2Raw(bendit.NewVec(10, 10)),
+		cubic.NewHermiteVx2Raw(bendit.NewVec(100, 100)),
+		cubic.NewHermiteVx2Raw(bendit.NewVec(150, 10)),
+	)
 
-	/*pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
-		cubic.NewHermiteVx2Raw(100, 100),
-		cubic.NewHermiteVx2Raw(400, 400),
-		cubic.NewHermiteVx2Raw(700, 100),
-	)*/
+	pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
+		cubic.NewHermiteVx2Raw(bendit.NewVec(100, 100)),
+		cubic.NewHermiteVx2Raw(bendit.NewVec(400, 400)),
+		cubic.NewHermiteVx2Raw(bendit.NewVec(700, 100)),
+	)
 
-	/*herm := cubic.NewNaturalHermiteSpline2d(nil)
-	herm.AddVertex(0, cubic.NewHermiteVx2Raw(100, 100))
-	herm.AddVertex(1, cubic.NewHermiteVx2Raw(400, 400))
-	herm.AddVertex(2, cubic.NewHermiteVx2Raw(700, 100))
-	pg.spline = herm*/
+	herm := cubic.NewNaturalHermiteSpline2d(nil)
+	herm.AddVertex(0, cubic.NewHermiteVx2Raw(bendit.NewVec(100, 100)))
+	herm.AddVertex(1, cubic.NewHermiteVx2Raw(bendit.NewVec(400, 400)))
+	herm.AddVertex(2, cubic.NewHermiteVx2Raw(bendit.NewVec(700, 100)))
+	pg.spline = herm
 
 	// bezier
-	/*pg.spline = cubic.NewBezierSpline2d(nil,
-	cubic.NewBezierVx2(200, 200, nil, cubic.NewControl(250, 200)),
-	cubic.NewBezierVx2(400, 400, cubic.NewControl(350, 400), nil))*/
+	pg.spline = cubic.NewBezierSpline2d(nil,
+		cubic.NewBezierVx2(bendit.NewVec(200, 200), nil, bendit.NewVec(250, 200)),
+		cubic.NewBezierVx2(bendit.NewVec(400, 400), bendit.NewVec(350, 400), nil))
 
-	/*pg.spline = cubic.NewBezierSpline2d(nil,
-	cubic.NewBezierVx2(200, 200, cubic.NewControl(100, 200), cubic.NewControl(300, 200)),
-	cubic.NewBezierVx2(300, 300, cubic.NewControl(200, 300), cubic.NewControl(400, 300)))*/
+	pg.spline = cubic.NewBezierSpline2d(nil,
+		cubic.NewBezierVx2(bendit.NewVec(200, 200), bendit.NewVec(100, 200), bendit.NewVec(300, 200)),
+		cubic.NewBezierVx2(bendit.NewVec(300, 300), bendit.NewVec(200, 300), bendit.NewVec(400, 300)))
 
 	pg.spline = cubic.NewBezierSpline2d(nil)
-	pg.spline.AddVertex(0, cubic.NewBezierVx2(100, 100, nil, cubic.NewControl(120, 150)))
-	pg.spline.AddVertex(1, cubic.NewBezierVx2(300, 300, cubic.NewControl(200, 300), nil))
-	pg.spline.AddVertex(2, cubic.NewBezierVx2(500, 100, cubic.NewControl(490, 150), nil))
+	pg.spline.AddVertex(0, cubic.NewBezierVx2(bendit.NewVec(100, 100), nil, bendit.NewVec(120, 150)))
+	pg.spline.AddVertex(1, cubic.NewBezierVx2(bendit.NewVec(300, 300), bendit.NewVec(200, 300), nil))
+	pg.spline.AddVertex(2, cubic.NewBezierVx2(bendit.NewVec(500, 100), bendit.NewVec(490, 150), nil))
 }
 
 func (pg *Playground) vertexRectForCircle(x float64, y float64) *core.QRectF {
@@ -257,10 +257,10 @@ func (pg *Playground) vertexRectForCircle(x float64, y float64) *core.QRectF {
 	return core.NewQRectF4(x-radius, y-radius, 2*radius, 2*radius)
 }
 
-func (pg *Playground) addVertexToScene(knotNo int, x float64, y float64) {
+func (pg *Playground) addVertexToScene(knotNo int, v bendit.Vec) {
 	veh := VertexEventHandler{playground: pg, knotNo: knotNo}
 	// vertex as solid black circle
-	circleVt := widgets.NewQGraphicsEllipseItem2(pg.vertexRectForCircle(x, y), nil)
+	circleVt := widgets.NewQGraphicsEllipseItem2(pg.vertexRectForCircle(v[0], v[1]), nil)
 	circleVt.SetBrush(pg.brush)
 	circleVt.ConnectMousePressEvent(veh.HandleMousePressEvent)
 	circleVt.ConnectMouseReleaseEvent(veh.HandleMouseReleaseEvent)
@@ -273,16 +273,15 @@ func (pg *Playground) controlRectForCircle(x float64, y float64) *core.QRectF {
 	return core.NewQRectF4(x-radius, y-radius, 2*radius, 2*radius)
 }
 
-func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex2d, ctrlx, ctrly float64, isEntry bool) {
+func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex2d, ctrl bendit.Vec, isEntry bool) {
 	evh := ControlPointEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
 	// control as solid gray circle
-	circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrlx, ctrly), nil)
+	circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrl[0], ctrl[1]), nil)
 	circleCtrl.SetBrush(pg.brushCtrl)
 	circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
 	circleCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
 	pg.sceneItems.SetControlCircle(knotNo, isEntry, circleCtrl)
-	vtx, vty := vertex.Coord()
-	pg.sceneItems.SetControlLine(knotNo, isEntry, vtx, vty, ctrlx, ctrly, pg.penCtrl)
+	pg.sceneItems.SetControlLine(knotNo, isEntry, vertex.Coord(), ctrl, pg.penCtrl)
 }
 
 func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen gui.QPen_ITF) {
@@ -300,8 +299,7 @@ func (pg *Playground) addSplineToScene() {
 	// vertices
 	vertices := bendit.Vertices(pg.spline)
 	for i := 0; i < len(vertices); i++ {
-		x, y := vertices[i].Coord()
-		pg.addVertexToScene(i, x, y)
+		pg.addVertexToScene(i, vertices[i].Coord())
 
 		// controls
 		switch spl := pg.spline.(type) {
@@ -309,15 +307,15 @@ func (pg *Playground) addSplineToScene() {
 			// bezier control points
 			bvt, _ := spl.Vertex(i).(*cubic.BezierVx2)
 			entry := bvt.Entry()
-			pg.addControlPointToScene(i, bvt, entry.X(), entry.Y(), true)
+			pg.addControlPointToScene(i, bvt, entry, true)
 			exit := bvt.Exit()
-			pg.addControlPointToScene(i, bvt, exit.X(), exit.Y(), false)
+			pg.addControlPointToScene(i, bvt, exit, false)
 		case *cubic.HermiteSpline2d, *cubic.NaturalHermiteSpline2d:
 			hvt, _ := spl.Vertex(i).(*cubic.HermiteVx2)
 			entry := hvt.Control(true)
-			pg.addControlPointToScene(i, hvt, entry.X(), entry.Y(), true)
+			pg.addControlPointToScene(i, hvt, entry, true)
 			exit := hvt.Control(false)
-			pg.addControlPointToScene(i, hvt, exit.X(), exit.Y(), false)
+			pg.addControlPointToScene(i, hvt, exit, false)
 		default:
 			panic(fmt.Sprintf("type not yet supported: %T", spl))
 		}
@@ -339,23 +337,24 @@ func (eh *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsScen
 
 func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	pos := event.Pos()
-	x, y := pos.X(), pos.Y()
+	v := bendit.NewVec(pos.X(), pos.Y())
 	vt := eh.playground.spline.Vertex(eh.knotNo)
-	xold, yold := vt.Coord()
+	vold := vt.Coord()
 	/*fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
 	eh.knotNo, x, y, xold, yold)*/
 
 	// modify spline
-	vt = vt.Translate(x-xold, y-yold)
+	//vt = vt.Translate(x-vold[0], y-vold[1])
+	vt = vt.Translate(v.Sub(vold))
 	eh.playground.spline.UpdateVertex(eh.knotNo, vt)
 
 	// move vertex
 	circleVx := eh.playground.sceneItems.VertexCircle(eh.knotNo)
-	circleVx.SetRect(eh.playground.vertexRectForCircle(x, y))
+	circleVx.SetRect(eh.playground.vertexRectForCircle(v[0], v[1]))
 
 	// move control-points
 	moveControlPoint := func(isEntry bool) {
-		var ctrl *cubic.Control
+		var ctrl bendit.Vec
 		switch vertex := vt.(type) {
 		case *cubic.BezierVx2:
 			ctrl = vertex.Control(isEntry)
@@ -364,8 +363,8 @@ func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSc
 		}
 		circleEntry := eh.playground.sceneItems.ControlCircle(eh.knotNo, isEntry)
 		if circleEntry != nil {
-			circleEntry.SetRect(eh.playground.controlRectForCircle(ctrl.X(), ctrl.Y()))
-			eh.playground.sceneItems.SetControlLine(eh.knotNo, isEntry, x, y, ctrl.X(), ctrl.Y(), eh.playground.penCtrl)
+			circleEntry.SetRect(eh.playground.controlRectForCircle(ctrl[0], ctrl[1]))
+			eh.playground.sceneItems.SetControlLine(eh.knotNo, isEntry, v, ctrl, eh.playground.penCtrl)
 		}
 	}
 	moveControlPoint(true)
@@ -386,25 +385,27 @@ func (eh *VertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphi
 	if eh.knotNo == eh.playground.spline.Knots().KnotCnt()-1 {
 		// double-click on last vertex => add new one
 		var newVertex bendit.Vertex2d
-		vtx, vty := x+30, y+30
-		var ctrlx, ctrly, exctrlx, exctrly float64
+		vt := bendit.NewVec(x+30, y+30)
+		var ctrl, exctrl bendit.Vec
 		switch eh.playground.spline.(type) {
 		case *cubic.BezierSpline2d:
-			ctrlx, ctrly = x-20, y-20
-			bezier := cubic.NewBezierVx2(vtx, vty, cubic.NewControl(ctrlx, ctrly), nil)
-			exctrlx, exctrly = bezier.Exit().X(), bezier.Exit().Y()
+			ctrl = bendit.NewVec(x-20, y-20)
+			bezier := cubic.NewBezierVx2(vt, ctrl, nil)
+			exctrl = bezier.Exit()
 			newVertex = bezier
 		case *cubic.HermiteSpline2d, *cubic.NaturalHermiteSpline2d:
-			hermite := cubic.NewHermiteVx2(vtx, vty, cubic.NewControl(30, 80), nil)
-			ctrlx, ctrly = vtx-hermite.EntryTan().X(), vty-hermite.EntryTan().Y()
-			exctrlx, exctrly = vtx+hermite.ExitTan().X(), vty+hermite.ExitTan().Y()
+			hermite := cubic.NewHermiteVx2(vt, bendit.NewVec(30, 80), nil)
+			ctrl = vt.Sub(hermite.EntryTan())
+			exctrl = vt.Add(hermite.ExitTan())
+			//ctrlx, ctrly = vtx-hermite.EntryTan().X(), vty-hermite.EntryTan().Y()
+			//exctrlx, exctrly = vtx+hermite.ExitTan().X(), vty+hermite.ExitTan().Y()
 			newVertex = hermite
 		}
 		newKnotNo := eh.knotNo + 1
 		eh.playground.spline.AddVertex(newKnotNo, newVertex)
-		eh.playground.addVertexToScene(newKnotNo, vtx, vty)
-		eh.playground.addControlPointToScene(newKnotNo, newVertex, ctrlx, ctrly, true)
-		eh.playground.addControlPointToScene(newKnotNo, newVertex, exctrlx, exctrly, false)
+		eh.playground.addVertexToScene(newKnotNo, vt)
+		eh.playground.addControlPointToScene(newKnotNo, newVertex, ctrl, true)
+		eh.playground.addControlPointToScene(newKnotNo, newVertex, exctrl, false)
 	}
 }
 
@@ -419,16 +420,15 @@ func (eh *ControlPointEventHandler) HandleMousePressEvent(event *widgets.QGraphi
 
 func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	pos := event.Pos()
-	x, y := pos.X(), pos.Y()
+	ctrl := bendit.NewVec(pos.X(), pos.Y())
 	vt := eh.playground.spline.Vertex(eh.knotNo)
-	vtx, vty := vt.Coord()
 	var dependent bool
-	var othx, othy float64
+	var otherCtrl bendit.Vec
 
 	// modify spline
 	switch vertex := vt.(type) {
 	case *cubic.BezierVx2:
-		ctrl := cubic.NewControl(x, y)
+		//ctrl := cubic.NewControl(x, y)
 		if eh.isEntry {
 			vt = vertex.WithEntry(ctrl)
 		} else {
@@ -436,33 +436,33 @@ func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 		}
 		dependent = vertex.Dependent()
 		if dependent {
-			otherCtrl := vt.(*cubic.BezierVx2).Control(!eh.isEntry)
-			othx, othy = otherCtrl.X(), otherCtrl.Y()
+			otherCtrl = vt.(*cubic.BezierVx2).Control(!eh.isEntry)
 		}
 	case *cubic.HermiteVx2:
 		if eh.isEntry {
-			vt = vertex.WithEntryTan(cubic.NewControl(vtx-x, vty-y))
+			//vt = vertex.WithEntryTan(cubic.NewControl(vtx-x, vty-y))
+			vt = vertex.WithEntryTan(vt.Coord().Sub(ctrl))
 		} else {
-			vt = vertex.WithExitTan(cubic.NewControl(x-vtx, y-vty))
+			//vt = vertex.WithExitTan(cubic.NewControl(x-vtx, y-vty))
+			vt = vertex.WithExitTan(ctrl.Sub(vt.Coord()))
 		}
 		dependent = vertex.Dependent()
 		if dependent {
-			otherCtrl := vt.(*cubic.HermiteVx2).Control(!eh.isEntry)
-			othx, othy = otherCtrl.X(), otherCtrl.Y()
+			otherCtrl = vt.(*cubic.HermiteVx2).Control(!eh.isEntry)
 		}
 	}
 	eh.playground.spline.UpdateVertex(eh.knotNo, vt)
 
 	// move control
 	ctrlCircle := eh.playground.sceneItems.ControlCircle(eh.knotNo, eh.isEntry)
-	ctrlCircle.SetRect(eh.playground.controlRectForCircle(x, y))
-	eh.playground.sceneItems.SetControlLine(eh.knotNo, eh.isEntry, vtx, vty, x, y, eh.playground.penCtrl)
+	ctrlCircle.SetRect(eh.playground.controlRectForCircle(ctrl[0], ctrl[1]))
+	eh.playground.sceneItems.SetControlLine(eh.knotNo, eh.isEntry, vt.Coord(), ctrl, eh.playground.penCtrl)
 
 	if dependent {
 		ctrlCircle = eh.playground.sceneItems.ControlCircle(eh.knotNo, !eh.isEntry)
 		if ctrlCircle != nil {
-			ctrlCircle.SetRect(eh.playground.controlRectForCircle(othx, othy))
-			eh.playground.sceneItems.SetControlLine(eh.knotNo, !eh.isEntry, vtx, vty, othx, othy, eh.playground.penCtrl)
+			ctrlCircle.SetRect(eh.playground.controlRectForCircle(otherCtrl[0], otherCtrl[1]))
+			eh.playground.sceneItems.SetControlLine(eh.knotNo, !eh.isEntry, vt.Coord(), otherCtrl, eh.playground.penCtrl)
 		}
 	}
 
@@ -490,7 +490,8 @@ func NewQPathCollector2d() *QPathCollector2d {
 	return &QPathCollector2d{Paths: map[int]*gui.QPainterPath{}}
 }
 
-func (lc *QPathCollector2d) CollectLine(segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64) {
+//segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64
+func (lc *QPathCollector2d) CollectLine(segmentNo int, tstart, tend float64, pstart, pend bendit.Vec) {
 	// get path for segment
 	path, exists := lc.Paths[segmentNo]
 	if !exists {
@@ -500,9 +501,9 @@ func (lc *QPathCollector2d) CollectLine(segmentNo int, tstart, tend, pstartx, ps
 
 	// add line to path
 	if path.ElementCount() == 0 {
-		path.MoveTo(core.NewQPointF3(pstartx, pstarty))
+		path.MoveTo(core.NewQPointF3(pstart[0], pstart[1]))
 	}
-	path.LineTo(core.NewQPointF3(pendx, pendy))
+	path.LineTo(core.NewQPointF3(pend[0], pend[1]))
 }
 
 func (lc *QPathCollector2d) LineCnt() int {
