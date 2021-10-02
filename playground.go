@@ -213,38 +213,45 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 
 func (pg *Playground) buildSpline() {
 	// hermite
-	pg.spline = cubic.NewHermiteSpline2d(nil,
+	/*herm := cubic.NewHermiteSpline2d(nil,
 		cubic.NewHermiteVx2(bendit.NewVec(200, 200), nil, bendit.NewVec(90, 90)),
 		cubic.NewHermiteVx2(bendit.NewVec(350, 350), bendit.NewVec(200, 0), nil),
 		cubic.NewHermiteVx2(bendit.NewVec(500, 200), bendit.NewVec(100, -100), nil),
 	)
+	herm.Prepare()
+	pg.spline = herm*/
 
-	pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
+	/*herm := cubic.NewNaturalHermiteSpline2d(nil,
 		cubic.NewHermiteVx2Raw(bendit.NewVec(10, 10)),
 		cubic.NewHermiteVx2Raw(bendit.NewVec(100, 100)),
 		cubic.NewHermiteVx2Raw(bendit.NewVec(150, 10)),
 	)
+	herm.Prepare()
+	pg.spline = herm*/
 
-	pg.spline = cubic.NewNaturalHermiteSpline2d(nil,
+	/*herm := cubic.NewNaturalHermiteSpline2d(nil,
 		cubic.NewHermiteVx2Raw(bendit.NewVec(100, 100)),
 		cubic.NewHermiteVx2Raw(bendit.NewVec(400, 400)),
 		cubic.NewHermiteVx2Raw(bendit.NewVec(700, 100)),
 	)
+	herm.Prepare()
+	pg.spline = herm*/
 
-	herm := cubic.NewNaturalHermiteSpline2d(nil)
+	/*herm := cubic.NewNaturalHermiteSpline2d(nil)
 	herm.AddVertex(0, cubic.NewHermiteVx2Raw(bendit.NewVec(100, 100)))
 	herm.AddVertex(1, cubic.NewHermiteVx2Raw(bendit.NewVec(400, 400)))
 	herm.AddVertex(2, cubic.NewHermiteVx2Raw(bendit.NewVec(700, 100)))
-	pg.spline = herm
+	herm.Prepare()
+	pg.spline = herm*/
 
 	// bezier
-	pg.spline = cubic.NewBezierSpline2d(nil,
-		cubic.NewBezierVx2(bendit.NewVec(200, 200), nil, bendit.NewVec(250, 200)),
-		cubic.NewBezierVx2(bendit.NewVec(400, 400), bendit.NewVec(350, 400), nil))
+	/*pg.spline = cubic.NewBezierSpline2d(nil,
+	cubic.NewBezierVx2(bendit.NewVec(200, 200), nil, bendit.NewVec(250, 200)),
+	cubic.NewBezierVx2(bendit.NewVec(400, 400), bendit.NewVec(350, 400), nil))*/
 
-	pg.spline = cubic.NewBezierSpline2d(nil,
-		cubic.NewBezierVx2(bendit.NewVec(200, 200), bendit.NewVec(100, 200), bendit.NewVec(300, 200)),
-		cubic.NewBezierVx2(bendit.NewVec(300, 300), bendit.NewVec(200, 300), bendit.NewVec(400, 300)))
+	/*pg.spline = cubic.NewBezierSpline2d(nil,
+	cubic.NewBezierVx2(bendit.NewVec(200, 200), bendit.NewVec(100, 200), bendit.NewVec(300, 200)),
+	cubic.NewBezierVx2(bendit.NewVec(300, 300), bendit.NewVec(200, 300), bendit.NewVec(400, 300)))*/
 
 	pg.spline = cubic.NewBezierSpline2d(nil)
 	pg.spline.AddVertex(0, cubic.NewBezierVx2(bendit.NewVec(100, 100), nil, bendit.NewVec(120, 150)))
