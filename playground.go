@@ -280,7 +280,7 @@ func (pg *Playground) controlRectForCircle(x float64, y float64) *core.QRectF {
 	return core.NewQRectF4(x-radius, y-radius, 2*radius, 2*radius)
 }
 
-func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex2d, ctrl bendit.Vec, isEntry bool) {
+func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex, ctrl bendit.Vec, isEntry bool) {
 	evh := ControlPointEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
 	// control as solid gray circle
 	circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrl[0], ctrl[1]), nil)
@@ -349,7 +349,7 @@ func (eh *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsScen
 func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	pos := event.Pos()
 	loc := bendit.NewVec(pos.X(), pos.Y())
-	vt := eh.playground.spline.Vertex(eh.knotNo)
+	vt := eh.playground.spline.Vertex(eh.knotNo).(cubic.ControlVertex)
 	oldLoc := vt.Loc()
 	/*fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
 	eh.knotNo, x, y, xold, yold)*/
@@ -388,8 +388,8 @@ func (eh *VertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphi
 
 	if eh.knotNo == eh.playground.spline.Knots().KnotCnt()-1 {
 		// double-click on last vertex => add new one
-		vt := eh.playground.spline.Vertex(eh.knotNo)
-		newVt := vt.Translate(bendit.NewVec(30, 30)).(cubic.ControlVertex)
+		vt := eh.playground.spline.Vertex(eh.knotNo).(cubic.ControlVertex)
+		newVt := vt.Translate(bendit.NewVec(30, 30))
 		/*var newVt cubic.ControlVertex
 		loc := bendit.NewVec(x+30, y+30)
 		var entryLoc, exitLoc bendit.Vec
