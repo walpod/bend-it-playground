@@ -267,7 +267,7 @@ func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex, c
 
 func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen gui.QPen_ITF) {
 	paco := NewQPathCollector2d()
-	pg.splineBuilder.BuildApproxim().Approx(fromSegmentNo, toSegmentNo, 0.5, paco)
+	pg.splineBuilder.BuildApproxer().Approx(fromSegmentNo, toSegmentNo, 0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.LineCnt())
 	for segmNo := fromSegmentNo; segmNo <= toSegmentNo; segmNo++ {
 		pg.sceneItems.SetSegmentPath(segmNo, paco.Paths[segmNo], pen, gui.NewQBrush())
