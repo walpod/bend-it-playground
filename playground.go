@@ -112,6 +112,14 @@ func (si *GraphicsSceneItems) SetControlLine(knotNo int, isEntry bool, from, to 
 	return lineItem
 }
 
+func (si *GraphicsSceneItems) Clear() {
+	si.scene.Clear()
+	si.segmentPaths = nil
+	si.vertexCircles = nil
+	si.controlCircles = nil
+	si.controlLines = nil
+}
+
 /*func (si *GraphicsSceneItems) ResetVertex(knotNo int) {
 	si.scene.RemoveItem(si.vertexCircles[knotNo])
 	si.vertexCircles[knotNo] = nil
@@ -144,14 +152,15 @@ func (si *GraphicsSceneItems) SetControlLine(knotNo int, isEntry bool, from, to 
 }*/
 
 type Playground struct {
-	splineBuilder bendit.VertSplineBuilder
+	splineBuilder bendit.SplineVertBuilder
 	sceneItems    GraphicsSceneItems
 	// styles for spline and vertices
 	pen   gui.QPen_ITF
 	brush gui.QBrush_ITF
 	// styles for controls
-	penCtrl   gui.QPen_ITF
-	brushCtrl gui.QBrush_ITF
+	penCtrl           gui.QPen_ITF
+	brushCtrl         gui.QBrush_ITF
+	brushCtrlDisabled gui.QBrush_ITF
 }
 
 func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
@@ -175,10 +184,12 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 	// colors and styles
 	black := gui.NewQColor2(core.Qt__black)
 	gray := gui.NewQColor2(core.Qt__gray)
+	white := gui.NewQColor2(core.Qt__white)
 	pg.pen = gui.NewQPen3(black)
 	pg.brush = gui.NewQBrush2(core.Qt__SolidPattern)
 	pg.penCtrl = gui.NewQPen2(core.Qt__DotLine) // core.Qt__DashLine
 	pg.brushCtrl = gui.NewQBrush3(gray, core.Qt__SolidPattern)
+	pg.brushCtrlDisabled = gui.NewQBrush3(white, core.Qt__SolidPattern)
 
 	pg.prepareSplineBuilder()
 	pg.addSplineToScene()
@@ -187,50 +198,56 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 
 func (pg *Playground) prepareSplineBuilder() {
 	// hermite
-	/*herm := cubic.NewHermiteVertBuilder(nil,
+	herm := cubic.NewHermiteVertBuilder(nil,
 		cubic.NewHermiteVertex(bendit.NewVec(200, 200), nil, bendit.NewVec(90, 90)),
 		cubic.NewHermiteVertex(bendit.NewVec(350, 350), bendit.NewVec(200, 0), nil),
 		cubic.NewHermiteVertex(bendit.NewVec(500, 200), bendit.NewVec(100, -100), nil),
 	)
-	herm.Prepare()
-	pg.spline = herm*/
+	pg.splineBuilder = herm
 
-	/*nat := cubic.NewNaturalVertBuilder(nil,
+	nat := cubic.NewNaturalVertBuilder(nil,
 		cubic.NewRawHermiteVertex(bendit.NewVec(10, 10)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(150, 10)),
 	)
-	nat.Prepare()
-	pg.spline = nat*/
+	pg.splineBuilder = nat
 
-	/*nat = cubic.NewNaturalVertBuilder(nil,
+	nat = cubic.NewNaturalVertBuilder(nil)
+	nat.AddVertex(0, cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)))
+	nat.AddVertex(1, cubic.NewRawHermiteVertex(bendit.NewVec(400, 400)))
+	nat.AddVertex(2, cubic.NewRawHermiteVertex(bendit.NewVec(700, 100)))
+	pg.splineBuilder = nat
+
+	/*card := cubic.NewCardinalVertBuilder(nil, 0, //-3,
 		cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(400, 400)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(700, 100)),
 	)
-	nat.Prepare()
-	pg.spline = nat*/
-
-	/*nat = cubic.NewNaturalVertBuilder(nil)
-	nat.AddVertex(0, cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)))
-	nat.AddVertex(1, cubic.NewRawHermiteVertex(bendit.NewVec(400, 400)))
-	nat.AddVertex(2, cubic.NewRawHermiteVertex(bendit.NewVec(700, 100)))
-	nat.Prepare()
-	pg.spline = nat*/
+	pg.splineBuilder = card*/
 
 	// bezier
-	/*pg.spline = cubic.NewBezierVertBuilder(nil,
+	/*pg.splineBuilder = cubic.NewBezierVertBuilder(nil,
 	cubic.NewBezierVertex(bendit.NewVec(200, 200), nil, bendit.NewVec(250, 200)),
 	cubic.NewBezierVertex(bendit.NewVec(400, 400), bendit.NewVec(350, 400), nil))*/
 
-	/*pg.spline = cubic.NewBezierVertBuilder(nil,
+	/*pg.splineBuilder = cubic.NewBezierVertBuilder(nil,
 	cubic.NewBezierVertex(bendit.NewVec(200, 200), bendit.NewVec(100, 200), bendit.NewVec(300, 200)),
 	cubic.NewBezierVertex(bendit.NewVec(300, 300), bendit.NewVec(200, 300), bendit.NewVec(400, 300)))*/
 
-	pg.splineBuilder = cubic.NewBezierVertBuilder(nil)
+	/*pg.splineBuilder = cubic.NewBezierVertBuilder(nil)
 	pg.splineBuilder.AddVertex(0, cubic.NewBezierVertex(bendit.NewVec(100, 100), nil, bendit.NewVec(120, 150)))
 	pg.splineBuilder.AddVertex(1, cubic.NewBezierVertex(bendit.NewVec(300, 300), bendit.NewVec(200, 300), nil))
-	pg.splineBuilder.AddVertex(2, cubic.NewBezierVertex(bendit.NewVec(500, 100), bendit.NewVec(490, 150), nil))
+	pg.splineBuilder.AddVertex(2, cubic.NewBezierVertex(bendit.NewVec(500, 100), bendit.NewVec(490, 150), nil))*/
+}
+
+func (pg *Playground) HasAutoControls() bool {
+	switch pg.splineBuilder.(type) {
+	case *cubic.NaturalVertBuilder, *cubic.CardinalVertBuilder:
+		// on change of a vertex natural and cardinal splines are changing controls of other vertices on-the-fly
+		return true
+	default:
+		return false
+	}
 }
 
 func (pg *Playground) vertexRectForCircle(x float64, y float64) *core.QRectF {
@@ -258,7 +275,11 @@ func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex, c
 	evh := ControlPointEventHandler{playground: pg, knotNo: knotNo, isEntry: isEntry}
 	// control as solid gray circle
 	circleCtrl := widgets.NewQGraphicsEllipseItem2(pg.controlRectForCircle(ctrl[0], ctrl[1]), nil)
-	circleCtrl.SetBrush(pg.brushCtrl)
+	if pg.HasAutoControls() {
+		circleCtrl.SetBrush(pg.brushCtrlDisabled)
+	} else {
+		circleCtrl.SetBrush(pg.brushCtrl)
+	}
 	circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
 	circleCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
 	pg.sceneItems.SetControlCircle(knotNo, isEntry, circleCtrl)
@@ -314,6 +335,12 @@ func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSc
 	vt = vt.Translate(loc.Sub(oldLoc))
 	eh.playground.splineBuilder.UpdateVertex(eh.knotNo, vt)
 
+	if eh.playground.HasAutoControls() {
+		eh.playground.sceneItems.Clear()
+		eh.playground.addSplineToScene()
+		return
+	}
+
 	// move vertex
 	circleVx := eh.playground.sceneItems.VertexCircle(eh.knotNo)
 	circleVx.SetRect(eh.playground.vertexRectForCircle(loc[0], loc[1]))
@@ -348,6 +375,13 @@ func (eh *VertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphi
 		newVt := vt.Translate(bendit.NewVec(30, 30))
 		newKnotNo := eh.knotNo + 1
 		eh.playground.splineBuilder.AddVertex(newKnotNo, newVt)
+
+		// draw
+		if eh.playground.HasAutoControls() {
+			eh.playground.sceneItems.Clear()
+			eh.playground.addSplineToScene()
+			return
+		}
 		eh.playground.addVertexToScene(newKnotNo, newVt.Loc())
 		eh.playground.addControlPointToScene(newKnotNo, newVt, cubic.ControlLoc(newVt, true), true)
 		eh.playground.addControlPointToScene(newKnotNo, newVt, cubic.ControlLoc(newVt, false), false)
@@ -367,6 +401,11 @@ func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	pos := event.Pos()
 	ctrlLoc := bendit.NewVec(pos.X(), pos.Y())
 	vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(cubic.ControlVertex)
+
+	// dont allow to move controls directly if they are calculated
+	if eh.playground.HasAutoControls() {
+		return
+	}
 
 	// modify spline
 	vt = cubic.NewControlVertexWithControlLoc(vt, ctrlLoc, eh.isEntry)
