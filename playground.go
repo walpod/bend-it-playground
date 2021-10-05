@@ -187,7 +187,7 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 
 func (pg *Playground) prepareSplineBuilder() {
 	// hermite
-	/*herm := cubic.NewHermiteSpline2d(nil,
+	/*herm := cubic.NewHermiteVertBuilder(nil,
 		cubic.NewHermiteVertex(bendit.NewVec(200, 200), nil, bendit.NewVec(90, 90)),
 		cubic.NewHermiteVertex(bendit.NewVec(350, 350), bendit.NewVec(200, 0), nil),
 		cubic.NewHermiteVertex(bendit.NewVec(500, 200), bendit.NewVec(100, -100), nil),
@@ -195,7 +195,7 @@ func (pg *Playground) prepareSplineBuilder() {
 	herm.Prepare()
 	pg.spline = herm*/
 
-	/*nat := cubic.NewNaturalHermiteSpline2d(nil,
+	/*nat := cubic.NewNaturalVertBuilder(nil,
 		cubic.NewRawHermiteVertex(bendit.NewVec(10, 10)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(150, 10)),
@@ -203,7 +203,7 @@ func (pg *Playground) prepareSplineBuilder() {
 	nat.Prepare()
 	pg.spline = nat*/
 
-	/*nat = cubic.NewNaturalHermiteSpline2d(nil,
+	/*nat = cubic.NewNaturalVertBuilder(nil,
 		cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(400, 400)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(700, 100)),
@@ -211,7 +211,7 @@ func (pg *Playground) prepareSplineBuilder() {
 	nat.Prepare()
 	pg.spline = nat*/
 
-	/*nat = cubic.NewNaturalHermiteSpline2d(nil)
+	/*nat = cubic.NewNaturalVertBuilder(nil)
 	nat.AddVertex(0, cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)))
 	nat.AddVertex(1, cubic.NewRawHermiteVertex(bendit.NewVec(400, 400)))
 	nat.AddVertex(2, cubic.NewRawHermiteVertex(bendit.NewVec(700, 100)))
@@ -219,15 +219,15 @@ func (pg *Playground) prepareSplineBuilder() {
 	pg.spline = nat*/
 
 	// bezier
-	/*pg.spline = cubic.NewVertBezierBuilder(nil,
+	/*pg.spline = cubic.NewBezierVertBuilder(nil,
 	cubic.NewBezierVertex(bendit.NewVec(200, 200), nil, bendit.NewVec(250, 200)),
 	cubic.NewBezierVertex(bendit.NewVec(400, 400), bendit.NewVec(350, 400), nil))*/
 
-	/*pg.spline = cubic.NewVertBezierBuilder(nil,
+	/*pg.spline = cubic.NewBezierVertBuilder(nil,
 	cubic.NewBezierVertex(bendit.NewVec(200, 200), bendit.NewVec(100, 200), bendit.NewVec(300, 200)),
 	cubic.NewBezierVertex(bendit.NewVec(300, 300), bendit.NewVec(200, 300), bendit.NewVec(400, 300)))*/
 
-	pg.splineBuilder = cubic.NewVertBezierBuilder(nil)
+	pg.splineBuilder = cubic.NewBezierVertBuilder(nil)
 	pg.splineBuilder.AddVertex(0, cubic.NewBezierVertex(bendit.NewVec(100, 100), nil, bendit.NewVec(120, 150)))
 	pg.splineBuilder.AddVertex(1, cubic.NewBezierVertex(bendit.NewVec(300, 300), bendit.NewVec(200, 300), nil))
 	pg.splineBuilder.AddVertex(2, cubic.NewBezierVertex(bendit.NewVec(500, 100), bendit.NewVec(490, 150), nil))
@@ -266,7 +266,7 @@ func (pg *Playground) addControlPointToScene(knotNo int, vertex bendit.Vertex, c
 }
 
 func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen gui.QPen_ITF) {
-	paco := NewQPathCollector2d()
+	paco := NewQPathCollector()
 	pg.splineBuilder.BuildApproxer().Approx(fromSegmentNo, toSegmentNo, 0.5, paco)
 	fmt.Printf("#line-segments: %v \n", paco.LineCnt())
 	for segmNo := fromSegmentNo; segmNo <= toSegmentNo; segmNo++ {
@@ -392,16 +392,16 @@ func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
-type QPathCollector2d struct {
+type QPathCollector struct {
 	Paths map[int]*gui.QPainterPath
 }
 
-func NewQPathCollector2d() *QPathCollector2d {
-	return &QPathCollector2d{Paths: map[int]*gui.QPainterPath{}}
+func NewQPathCollector() *QPathCollector {
+	return &QPathCollector{Paths: map[int]*gui.QPainterPath{}}
 }
 
 //segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64
-func (lc *QPathCollector2d) CollectLine(segmentNo int, tstart, tend float64, pstart, pend bendit.Vec) {
+func (lc *QPathCollector) CollectLine(segmentNo int, tstart, tend float64, pstart, pend bendit.Vec) {
 	// get path for segment
 	path, exists := lc.Paths[segmentNo]
 	if !exists {
@@ -416,7 +416,7 @@ func (lc *QPathCollector2d) CollectLine(segmentNo int, tstart, tend float64, pst
 	path.LineTo(core.NewQPointF3(pend[0], pend[1]))
 }
 
-func (lc *QPathCollector2d) LineCnt() int {
+func (lc *QPathCollector) LineCnt() int {
 	lineCnt := 0
 	for _, path := range lc.Paths {
 		lineCnt += path.ElementCount()
