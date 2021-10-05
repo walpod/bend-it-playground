@@ -198,32 +198,29 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 
 func (pg *Playground) prepareSplineBuilder() {
 	// hermite
-	herm := cubic.NewHermiteVertBuilder(nil,
+	/*pg.splineBuilder = cubic.NewHermiteVertBuilder(nil,
 		cubic.NewHermiteVertex(bendit.NewVec(200, 200), nil, bendit.NewVec(90, 90)),
 		cubic.NewHermiteVertex(bendit.NewVec(350, 350), bendit.NewVec(200, 0), nil),
 		cubic.NewHermiteVertex(bendit.NewVec(500, 200), bendit.NewVec(100, -100), nil),
-	)
-	pg.splineBuilder = herm
+	)*/
 
-	nat := cubic.NewNaturalVertBuilder(nil,
+	/*pg.splineBuilder = cubic.NewNaturalVertBuilder(nil,
 		cubic.NewRawHermiteVertex(bendit.NewVec(10, 10)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(150, 10)),
-	)
-	pg.splineBuilder = nat
+	)*/
 
-	nat = cubic.NewNaturalVertBuilder(nil)
+	/*nat := cubic.NewNaturalVertBuilder(nil)
 	nat.AddVertex(0, cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)))
 	nat.AddVertex(1, cubic.NewRawHermiteVertex(bendit.NewVec(400, 400)))
 	nat.AddVertex(2, cubic.NewRawHermiteVertex(bendit.NewVec(700, 100)))
-	pg.splineBuilder = nat
+	pg.splineBuilder = nat*/
 
-	/*card := cubic.NewCardinalVertBuilder(nil, 0, //-3,
+	/*pg.splineBuilder = cubic.NewCardinalVertBuilder(nil, -3,
 		cubic.NewRawHermiteVertex(bendit.NewVec(100, 100)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(400, 400)),
 		cubic.NewRawHermiteVertex(bendit.NewVec(700, 100)),
-	)
-	pg.splineBuilder = card*/
+	)*/
 
 	// bezier
 	/*pg.splineBuilder = cubic.NewBezierVertBuilder(nil,
@@ -234,10 +231,10 @@ func (pg *Playground) prepareSplineBuilder() {
 	cubic.NewBezierVertex(bendit.NewVec(200, 200), bendit.NewVec(100, 200), bendit.NewVec(300, 200)),
 	cubic.NewBezierVertex(bendit.NewVec(300, 300), bendit.NewVec(200, 300), bendit.NewVec(400, 300)))*/
 
-	/*pg.splineBuilder = cubic.NewBezierVertBuilder(nil)
+	pg.splineBuilder = cubic.NewBezierVertBuilder(nil)
 	pg.splineBuilder.AddVertex(0, cubic.NewBezierVertex(bendit.NewVec(100, 100), nil, bendit.NewVec(120, 150)))
 	pg.splineBuilder.AddVertex(1, cubic.NewBezierVertex(bendit.NewVec(300, 300), bendit.NewVec(200, 300), nil))
-	pg.splineBuilder.AddVertex(2, cubic.NewBezierVertex(bendit.NewVec(500, 100), bendit.NewVec(490, 150), nil))*/
+	pg.splineBuilder.AddVertex(2, cubic.NewBezierVertex(bendit.NewVec(500, 100), bendit.NewVec(490, 150), nil))
 }
 
 func (pg *Playground) HasAutoControls() bool {
