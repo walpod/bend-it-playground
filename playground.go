@@ -285,7 +285,7 @@ func (pg *Playground) addControlPointToScene(knotNo int, vertex bendigo.Vertex, 
 
 func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen gui.QPen_ITF) {
 	paco := NewQPathCollector()
-	pg.splineBuilder.Linax(fromSegmentNo, toSegmentNo, paco, bendigo.NewLinaxParams(0.5))
+	pg.splineBuilder.LinApproximate(fromSegmentNo, toSegmentNo, paco, bendigo.NewLinaxParams(0.5))
 	fmt.Printf("#line-segments: %v \n", paco.LineCnt())
 	for segmNo := fromSegmentNo; segmNo <= toSegmentNo; segmNo++ {
 		pg.sceneItems.SetSegmentPath(segmNo, paco.Paths[segmNo], pen, gui.NewQBrush())
@@ -437,7 +437,7 @@ func NewQPathCollector() *QPathCollector {
 }
 
 //segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64
-func (lc *QPathCollector) CollectLine(segmentNo int, tstart, tend float64, pstart, pend bendigo.Vec) {
+func (lc *QPathCollector) ConsumeLine(segmentNo int, tstart, tend float64, pstart, pend bendigo.Vec) {
 	// get path for segment
 	path, exists := lc.Paths[segmentNo]
 	if !exists {
