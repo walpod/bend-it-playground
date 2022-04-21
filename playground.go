@@ -197,7 +197,6 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 }
 
 func (pg *Playground) prepareSplineBuilder() {
-	// TODO LinaxParams maxDist
 	// hermite
 	/*pg.splineBuilder = cubic.NewHermiteVertBuilder(nil,
 		cubic.NewHermiteVertex(bendigo.NewVec(200, 200), nil, bendigo.NewVec(90, 90)),
@@ -286,7 +285,7 @@ func (pg *Playground) addControlPointToScene(knotNo int, vertex bendigo.Vertex, 
 
 func (pg *Playground) addSegmentPaths(fromSegmentNo int, toSegmentNo int, pen gui.QPen_ITF) {
 	paco := NewQPathCollector()
-	pg.splineBuilder.Linax(fromSegmentNo, toSegmentNo, paco)
+	pg.splineBuilder.Linax(fromSegmentNo, toSegmentNo, paco, bendigo.NewLinaxParams(0.5))
 	fmt.Printf("#line-segments: %v \n", paco.LineCnt())
 	for segmNo := fromSegmentNo; segmNo <= toSegmentNo; segmNo++ {
 		pg.sceneItems.SetSegmentPath(segmNo, paco.Paths[segmNo], pen, gui.NewQBrush())
