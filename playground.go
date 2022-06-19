@@ -158,9 +158,10 @@ type Playground struct {
 	pen   gui.QPen_ITF
 	brush gui.QBrush_ITF
 	// styles for controls
-	penCtrl           gui.QPen_ITF
-	brushCtrl         gui.QBrush_ITF
-	brushCtrlDisabled gui.QBrush_ITF
+	penCtrl            gui.QPen_ITF
+	brushCtrl          gui.QBrush_ITF
+	brushCtrlDependent gui.QBrush_ITF
+	brushCtrlDisabled  gui.QBrush_ITF
 }
 
 func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
@@ -184,11 +185,13 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 	// colors and styles
 	black := gui.NewQColor2(core.Qt__black)
 	gray := gui.NewQColor2(core.Qt__gray)
+	darkGray := gui.NewQColor2(core.Qt__darkGray)
 	white := gui.NewQColor2(core.Qt__white)
 	pg.pen = gui.NewQPen3(black)
 	pg.brush = gui.NewQBrush2(core.Qt__SolidPattern)
 	pg.penCtrl = gui.NewQPen2(core.Qt__DotLine) // core.Qt__DashLine
-	pg.brushCtrl = gui.NewQBrush3(gray, core.Qt__SolidPattern)
+	pg.brushCtrl = gui.NewQBrush3(darkGray, core.Qt__SolidPattern)
+	pg.brushCtrlDependent = gui.NewQBrush3(gray, core.Qt__SolidPattern)
 	pg.brushCtrlDisabled = gui.NewQBrush3(white, core.Qt__SolidPattern)
 
 	pg.prepareSplineBuilder()
@@ -275,10 +278,16 @@ func (pg *Playground) addControlPointToScene(knotNo int, vertex bendigo.Vertex, 
 	if pg.HasAutoControls() {
 		circleCtrl.SetBrush(pg.brushCtrlDisabled)
 	} else {
-		circleCtrl.SetBrush(pg.brushCtrl)
+		ev := vertex.(*cubic.EnexVertex)
+		if ev.Dependent() {
+			circleCtrl.SetBrush(pg.brushCtrlDependent)
+		} else {
+			circleCtrl.SetBrush(pg.brushCtrl)
+		}
 	}
 	circleCtrl.ConnectMousePressEvent(evh.HandleMousePressEvent)
 	circleCtrl.ConnectMouseReleaseEvent(evh.HandleMouseReleaseEvent)
+	circleCtrl.ConnectMouseDoubleClickEvent(evh.HandleMouseDoubleClickEvent)
 	pg.sceneItems.SetControlCircle(knotNo, isEntry, circleCtrl)
 	pg.sceneItems.SetControlLine(knotNo, isEntry, vertex.Loc(), ctrl, pg.penCtrl)
 }
@@ -301,9 +310,9 @@ func (pg *Playground) addSplineToScene() {
 		pg.addVertexToScene(i, vertices[i].Loc())
 
 		// controls
-		vt, _ := pg.splineBuilder.Vertex(i).(cubic.ControlVertex)
-		pg.addControlPointToScene(i, vt, cubic.ControlLoc(vt, true), true)
-		pg.addControlPointToScene(i, vt, cubic.ControlLoc(vt, false), false)
+		vt, _ := pg.splineBuilder.Vertex(i).(*cubic.EnexVertex)
+		pg.addControlPointToScene(i, vt, vt.ControlAsAbsolute(true), true)
+		pg.addControlPointToScene(i, vt, vt.ControlAsAbsolute(false), false)
 	}
 
 	// line segments
@@ -323,13 +332,13 @@ func (eh *VertexEventHandler) HandleMousePressEvent(event *widgets.QGraphicsScen
 func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	pos := event.Pos()
 	loc := bendigo.NewVec(pos.X(), pos.Y())
-	vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(cubic.ControlVertex)
+	vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(*cubic.EnexVertex)
 	oldLoc := vt.Loc()
 	/*fmt.Printf("mouse-released-event for vertex with knotNo = %v at %v/%v, for knot previously at %v/%v\n",
 	eh.knotNo, x, y, xold, yold)*/
 
 	// modify spline
-	vt = vt.Translate(loc.Sub(oldLoc))
+	vt.Shift(loc.Sub(oldLoc))
 	eh.playground.splineBuilder.UpdateVertex(eh.knotNo, vt)
 
 	if eh.playground.HasAutoControls() {
@@ -338,21 +347,21 @@ func (eh *VertexEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSc
 		return
 	}
 
-	// move vertex
+	// shift vertex-circle
 	circleVx := eh.playground.sceneItems.VertexCircle(eh.knotNo)
 	circleVx.SetRect(eh.playground.vertexRectForCircle(loc[0], loc[1]))
 
-	// move control-points
-	moveControlPoint := func(isEntry bool) {
-		ctrlLoc := cubic.ControlLoc(vt.(cubic.ControlVertex), isEntry)
+	// shift control-circles
+	shiftControlCircle := func(isEntry bool) {
+		ctrlLoc := vt.ControlAsAbsolute(isEntry)
 		circleEntry := eh.playground.sceneItems.ControlCircle(eh.knotNo, isEntry)
 		if circleEntry != nil {
 			circleEntry.SetRect(eh.playground.controlRectForCircle(ctrlLoc[0], ctrlLoc[1]))
 			eh.playground.sceneItems.SetControlLine(eh.knotNo, isEntry, loc, ctrlLoc, eh.playground.penCtrl)
 		}
 	}
-	moveControlPoint(true)
-	moveControlPoint(false)
+	shiftControlCircle(true)
+	shiftControlCircle(false)
 
 	// redraw segment paths
 	fromSegmentNo, toSegmentNo, _ := bendigo.SegmentsAroundKnot(eh.playground.splineBuilder.Knots(), eh.knotNo, true, true)
@@ -368,10 +377,10 @@ func (eh *VertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphi
 
 	if eh.knotNo == eh.playground.splineBuilder.Knots().KnotCnt()-1 {
 		// double-click on last vertex => add new one
-		vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(cubic.ControlVertex)
-		newVt := vt.Translate(bendigo.NewVec(30, 30))
+		vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(*cubic.EnexVertex)
+		vt.Shift(bendigo.NewVec(30, 30))
 		newKnotNo := eh.knotNo + 1
-		eh.playground.splineBuilder.AddVertex(newKnotNo, newVt)
+		eh.playground.splineBuilder.AddVertex(newKnotNo, vt)
 
 		// draw
 		if eh.playground.HasAutoControls() {
@@ -379,9 +388,9 @@ func (eh *VertexEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphi
 			eh.playground.addSplineToScene()
 			return
 		}
-		eh.playground.addVertexToScene(newKnotNo, newVt.Loc())
-		eh.playground.addControlPointToScene(newKnotNo, newVt, cubic.ControlLoc(newVt, true), true)
-		eh.playground.addControlPointToScene(newKnotNo, newVt, cubic.ControlLoc(newVt, false), false)
+		eh.playground.addVertexToScene(newKnotNo, vt.Loc())
+		eh.playground.addControlPointToScene(newKnotNo, vt, vt.ControlAsAbsolute(true), true)
+		eh.playground.addControlPointToScene(newKnotNo, vt, vt.ControlAsAbsolute(false), false)
 	}
 }
 
@@ -397,18 +406,18 @@ func (eh *ControlPointEventHandler) HandleMousePressEvent(event *widgets.QGraphi
 func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGraphicsSceneMouseEvent) {
 	pos := event.Pos()
 	ctrlLoc := bendigo.NewVec(pos.X(), pos.Y())
-	vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(cubic.ControlVertex)
+	vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(*cubic.EnexVertex)
 
-	// dont allow to move controls directly if they are calculated
+	// don't allow to move controls directly if they are calculated
 	if eh.playground.HasAutoControls() {
 		return
 	}
 
 	// modify spline
-	vt = cubic.NewControlVertexWithControlLoc(vt, ctrlLoc, eh.isEntry)
+	vt.SetControl(ctrlLoc, eh.isEntry)
 	eh.playground.splineBuilder.UpdateVertex(eh.knotNo, vt)
 
-	// move control
+	// shift control-circle
 	ctrlCircle := eh.playground.sceneItems.ControlCircle(eh.knotNo, eh.isEntry)
 	ctrlCircle.SetRect(eh.playground.controlRectForCircle(ctrlLoc[0], ctrlLoc[1]))
 	eh.playground.sceneItems.SetControlLine(eh.knotNo, eh.isEntry, vt.Loc(), ctrlLoc, eh.playground.penCtrl)
@@ -416,7 +425,7 @@ func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	if vt.Dependent() {
 		ctrlCircle = eh.playground.sceneItems.ControlCircle(eh.knotNo, !eh.isEntry)
 		if ctrlCircle != nil {
-			otherCtrlLoc := cubic.ControlLoc(vt, !eh.isEntry)
+			otherCtrlLoc := vt.ControlAsAbsolute(!eh.isEntry)
 			ctrlCircle.SetRect(eh.playground.controlRectForCircle(otherCtrlLoc[0], otherCtrlLoc[1]))
 			eh.playground.sceneItems.SetControlLine(eh.knotNo, !eh.isEntry, vt.Loc(), otherCtrlLoc, eh.playground.penCtrl)
 		}
@@ -426,6 +435,17 @@ func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	fromSegmentNo, toSegmentNo, _ := bendigo.SegmentsAroundKnot(eh.playground.splineBuilder.Knots(), eh.knotNo,
 		eh.isEntry || vt.Dependent(), !eh.isEntry || vt.Dependent())
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
+}
+
+func (eh ControlPointEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphicsSceneMouseEvent) {
+	// toggle "dependent" property on vertex
+	vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(*cubic.EnexVertex)
+	vt.ToggleDependent(eh.isEntry)
+
+	// change color of control-circles
+	eh.playground.addControlPointToScene(eh.knotNo, vt, vt.ControlAsAbsolute(true), true)
+	eh.playground.addControlPointToScene(eh.knotNo, vt, vt.ControlAsAbsolute(false), false)
+
 }
 
 type QPathCollector struct {
