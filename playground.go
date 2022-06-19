@@ -158,10 +158,10 @@ type Playground struct {
 	pen   gui.QPen_ITF
 	brush gui.QBrush_ITF
 	// styles for controls
-	penCtrl            gui.QPen_ITF
-	brushCtrl          gui.QBrush_ITF
-	brushCtrlDependent gui.QBrush_ITF
-	brushCtrlDisabled  gui.QBrush_ITF
+	penCtrl           gui.QPen_ITF
+	brushCtrl         gui.QBrush_ITF
+	brushCtrlLeading  gui.QBrush_ITF
+	brushCtrlDisabled gui.QBrush_ITF
 }
 
 func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
@@ -185,13 +185,13 @@ func NewPlayground(mainWindow *widgets.QMainWindow) *Playground {
 	// colors and styles
 	black := gui.NewQColor2(core.Qt__black)
 	gray := gui.NewQColor2(core.Qt__gray)
-	darkGray := gui.NewQColor2(core.Qt__darkGray)
+	//darkGray := gui.NewQColor2(core.Qt__darkGray)
 	white := gui.NewQColor2(core.Qt__white)
 	pg.pen = gui.NewQPen3(black)
 	pg.brush = gui.NewQBrush2(core.Qt__SolidPattern)
 	pg.penCtrl = gui.NewQPen2(core.Qt__DotLine) // core.Qt__DashLine
-	pg.brushCtrl = gui.NewQBrush3(darkGray, core.Qt__SolidPattern)
-	pg.brushCtrlDependent = gui.NewQBrush3(gray, core.Qt__SolidPattern)
+	pg.brushCtrl = gui.NewQBrush3(white, core.Qt__SolidPattern)
+	pg.brushCtrlLeading = gui.NewQBrush3(gray, core.Qt__SolidPattern)
 	pg.brushCtrlDisabled = gui.NewQBrush3(white, core.Qt__SolidPattern)
 
 	pg.prepareSplineBuilder()
@@ -279,8 +279,8 @@ func (pg *Playground) addControlPointToScene(knotNo int, vertex bendigo.Vertex, 
 		circleCtrl.SetBrush(pg.brushCtrlDisabled)
 	} else {
 		ev := vertex.(*cubic.EnexVertex)
-		if ev.Dependent() {
-			circleCtrl.SetBrush(pg.brushCtrlDependent)
+		if ev.Leading() {
+			circleCtrl.SetBrush(pg.brushCtrlLeading)
 		} else {
 			circleCtrl.SetBrush(pg.brushCtrl)
 		}
@@ -422,7 +422,7 @@ func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 	ctrlCircle.SetRect(eh.playground.controlRectForCircle(ctrlLoc[0], ctrlLoc[1]))
 	eh.playground.sceneItems.SetControlLine(eh.knotNo, eh.isEntry, vt.Loc(), ctrlLoc, eh.playground.penCtrl)
 
-	if vt.Dependent() {
+	if vt.Leading() {
 		ctrlCircle = eh.playground.sceneItems.ControlCircle(eh.knotNo, !eh.isEntry)
 		if ctrlCircle != nil {
 			otherCtrlLoc := vt.ControlAsAbsolute(!eh.isEntry)
@@ -431,21 +431,27 @@ func (eh *ControlPointEventHandler) HandleMouseReleaseEvent(event *widgets.QGrap
 		}
 	}
 
-	// replace segment paths (on both side of vertex if dependent)
+	// replace segment paths (on both side of vertex if 'leading')
 	fromSegmentNo, toSegmentNo, _ := bendigo.SegmentsAroundKnot(eh.playground.splineBuilder.Knots(), eh.knotNo,
-		eh.isEntry || vt.Dependent(), !eh.isEntry || vt.Dependent())
+		eh.isEntry || vt.Leading(), !eh.isEntry || vt.Leading())
 	eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
 }
 
 func (eh ControlPointEventHandler) HandleMouseDoubleClickEvent(event *widgets.QGraphicsSceneMouseEvent) {
-	// toggle "dependent" property on vertex
+	// toggle 'Leading' property of vertex
 	vt := eh.playground.splineBuilder.Vertex(eh.knotNo).(*cubic.EnexVertex)
-	vt.ToggleDependent(eh.isEntry)
+	vt.ToggleLeading(eh.isEntry)
 
 	// change color of control-circles
 	eh.playground.addControlPointToScene(eh.knotNo, vt, vt.ControlAsAbsolute(true), true)
 	eh.playground.addControlPointToScene(eh.knotNo, vt, vt.ControlAsAbsolute(false), false)
 
+	// if changed to 'Leading' then replace segment path on follower side
+	if vt.Leading() {
+		fromSegmentNo, toSegmentNo, _ := bendigo.SegmentsAroundKnot(eh.playground.splineBuilder.Knots(), eh.knotNo,
+			vt.EntryLeads(), !vt.EntryLeads())
+		eh.playground.addSegmentPaths(fromSegmentNo, toSegmentNo, gui.NewQPen3(gui.NewQColor2(core.Qt__black)))
+	}
 }
 
 type QPathCollector struct {
